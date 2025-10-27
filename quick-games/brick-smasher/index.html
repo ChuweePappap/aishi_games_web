@@ -62,17 +62,20 @@
 
       var buildUrl =
         'https://chuweepappap.github.io/aishi_games_web/quick-games/brick-smasher/Build'
-      var loaderUrl = buildUrl + '/strong.loader.js'
+      var cacheBuster = '?v=' + Date.now()
+      var loaderUrl = buildUrl + '/strong.loader.js' + cacheBuster
       var config = {
         arguments: [],
-        dataUrl: buildUrl + '/strong.data',
-        frameworkUrl: buildUrl + '/strong.framework.js',
-        codeUrl: buildUrl + '/strong.wasm',
+        dataUrl: buildUrl + '/strong.data' + cacheBuster,
+        frameworkUrl: buildUrl + '/strong.framework.js' + cacheBuster,
+        codeUrl: buildUrl + '/strong.wasm' + cacheBuster,
         streamingAssetsUrl: 'StreamingAssets',
         companyName: 'DefaultCompany',
         productName: 'most_Game_001',
         productVersion: '1.0.0',
         showBanner: unityShowBanner,
+        // Explicitly disable compression
+        compressionFormat: '',
         // errorHandler: function(err, url, line) {
         //    alert("error " + err + " occurred at line " + line);
         //    // Return 'true' if you handled this error and don't want Unity
