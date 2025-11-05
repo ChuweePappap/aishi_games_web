@@ -1,0 +1,18 @@
+# Enable gzip encoding for pre-compressed files
+<IfModule mod_mime.c>
+  # Serve .gz files with correct content encoding
+  AddEncoding gzip .gz
+  
+  # Serve correct MIME types for Unity WebGL files
+  AddType application/javascript .js.gz
+  AddType application/wasm .wasm.gz
+  AddType application/octet-stream .data.gz
+  AddType application/octet-stream .symbols.json.gz
+</IfModule>
+
+# Tell browsers the files are already compressed
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|wasm|data|symbols\.json)\.gz$">
+    Header set Content-Encoding gzip
+  </FilesMatch>
+</IfModule>
