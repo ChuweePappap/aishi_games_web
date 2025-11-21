@@ -69,7 +69,8 @@
         pointer-events: none;
         z-index: 100;
       }
-      #d-pad, #action-buttons {
+      #d-pad,
+      #action-buttons {
         pointer-events: auto;
         display: flex;
         flex-direction: column;
@@ -97,7 +98,8 @@
         margin: 5px;
         transition: background 0.1s, transform 0.1s;
       }
-      .control-btn:active, .control-btn.active {
+      .control-btn:active,
+      .control-btn.active {
         background: rgba(255, 255, 255, 0.4);
         transform: scale(0.95);
       }
@@ -107,7 +109,7 @@
         font-size: 32px;
         border-color: rgba(255, 255, 255, 0.8);
       }
-      
+
       /* Selection Highlight */
       .game-link.selected {
         background: rgba(255, 255, 255, 0.5);
@@ -150,78 +152,78 @@
 
     <!-- Mobile Controls -->
     <div id="mobile-controls">
-        <div id="d-pad">
-            <div class="d-pad-row">
-                <button id="btn-up" class="control-btn">▲</button>
-            </div>
-            <div class="d-pad-row">
-                <button id="btn-down" class="control-btn">▼</button>
-            </div>
+      <div id="d-pad">
+        <div class="d-pad-row">
+          <button id="btn-up" class="control-btn">▲</button>
         </div>
-        <div id="action-buttons">
-            <button id="btn-select" class="control-btn">✓</button>
+        <div class="d-pad-row">
+          <button id="btn-down" class="control-btn">▼</button>
         </div>
+      </div>
+      <div id="action-buttons">
+        <button id="btn-select" class="control-btn">✓</button>
+      </div>
     </div>
 
     <script>
-        const links = document.querySelectorAll('.game-link');
-        let currentIndex = -1;
+      const links = document.querySelectorAll('.game-link')
+      let currentIndex = -1
 
-        function selectLink(index) {
-            links.forEach(link => link.classList.remove('selected'));
-            if (index >= 0 && index < links.length) {
-                currentIndex = index;
-                links[currentIndex].classList.add('selected');
-                links[currentIndex].focus();
-            }
+      function selectLink(index) {
+        links.forEach((link) => link.classList.remove('selected'))
+        if (index >= 0 && index < links.length) {
+          currentIndex = index
+          links[currentIndex].classList.add('selected')
+          links[currentIndex].focus()
         }
+      }
 
-        function moveSelection(direction) {
-            if (currentIndex === -1) {
-                currentIndex = 0;
-            } else {
-                currentIndex += direction;
-                if (currentIndex < 0) currentIndex = links.length - 1;
-                if (currentIndex >= links.length) currentIndex = 0;
-            }
-            selectLink(currentIndex);
+      function moveSelection(direction) {
+        if (currentIndex === -1) {
+          currentIndex = 0
+        } else {
+          currentIndex += direction
+          if (currentIndex < 0) currentIndex = links.length - 1
+          if (currentIndex >= links.length) currentIndex = 0
         }
+        selectLink(currentIndex)
+      }
 
-        function activateSelection() {
-            if (currentIndex >= 0 && currentIndex < links.length) {
-                window.location.href = links[currentIndex].href;
-            }
+      function activateSelection() {
+        if (currentIndex >= 0 && currentIndex < links.length) {
+          window.location.href = links[currentIndex].href
         }
+      }
 
-        // Touch/Click Handlers
-        const setupControl = (btnId, action) => {
-            const btn = document.getElementById(btnId);
-            const handleStart = (e) => {
-                e.preventDefault();
-                btn.classList.add('active');
-                action();
-            };
-            const handleEnd = (e) => {
-                e.preventDefault();
-                btn.classList.remove('active');
-            };
-            btn.addEventListener('touchstart', handleStart, { passive: false });
-            btn.addEventListener('touchend', handleEnd, { passive: false });
-            btn.addEventListener('mousedown', handleStart);
-            btn.addEventListener('mouseup', handleEnd);
-            btn.addEventListener('mouseleave', handleEnd);
-        };
+      // Touch/Click Handlers
+      const setupControl = (btnId, action) => {
+        const btn = document.getElementById(btnId)
+        const handleStart = (e) => {
+          e.preventDefault()
+          btn.classList.add('active')
+          action()
+        }
+        const handleEnd = (e) => {
+          e.preventDefault()
+          btn.classList.remove('active')
+        }
+        btn.addEventListener('touchstart', handleStart, { passive: false })
+        btn.addEventListener('touchend', handleEnd, { passive: false })
+        btn.addEventListener('mousedown', handleStart)
+        btn.addEventListener('mouseup', handleEnd)
+        btn.addEventListener('mouseleave', handleEnd)
+      }
 
-        setupControl('btn-up', () => moveSelection(-1));
-        setupControl('btn-down', () => moveSelection(1));
-        setupControl('btn-select', activateSelection);
+      setupControl('btn-up', () => moveSelection(-1))
+      setupControl('btn-down', () => moveSelection(1))
+      setupControl('btn-select', activateSelection)
 
-        // Keyboard support
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp') moveSelection(-1);
-            if (e.key === 'ArrowDown') moveSelection(1);
-            if (e.key === 'Enter' || e.key === ' ') activateSelection();
-        });
+      // Keyboard support
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') moveSelection(-1)
+        if (e.key === 'ArrowDown') moveSelection(1)
+        if (e.key === 'Enter' || e.key === ' ') activateSelection()
+      })
     </script>
   </body>
 </html>

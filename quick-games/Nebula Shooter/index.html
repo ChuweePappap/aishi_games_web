@@ -1,45 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nebula Shooter</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div id="game-container">
-        <div id="ui-layer">
-            <div id="score">Score: 0</div>
-            <div id="start-screen">
-                <h1>Nebula Shooter</h1>
-                <p>Press Space to Start</p>
-                <p>Arrow Keys to Move, Space to Shoot</p>
-            </div>
-            <div id="game-over-screen" class="hidden">
-                <h1>Game Over</h1>
-                <p id="final-score">Score: 0</p>
-                <p>Press Space to Restart</p>
-            </div>
+      <div id="ui-layer">
+        <div id="score">Score: 0</div>
+        <div id="start-screen">
+          <h1>Nebula Shooter</h1>
+          <p>Press Space to Start</p>
+          <p>Arrow Keys to Move, Space to Shoot</p>
         </div>
-        <canvas id="gameCanvas"></canvas>
-        <div id="mobile-controls">
-            <div id="d-pad">
-                <div class="d-pad-row">
-                    <button id="btn-up" class="control-btn">▲</button>
-                </div>
-                <div class="d-pad-row">
-                    <button id="btn-left" class="control-btn">◀</button>
-                    <button id="btn-right" class="control-btn">▶</button>
-                </div>
-                <div class="d-pad-row">
-                    <button id="btn-down" class="control-btn">▼</button>
-                </div>
-            </div>
-            <div id="action-buttons">
-                <button id="btn-shoot" class="control-btn">🔥</button>
-            </div>
+        <div id="game-over-screen" class="hidden">
+          <h1>Game Over</h1>
+          <p id="final-score">Score: 0</p>
+          <p>Press Space to Restart</p>
         </div>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+      <div id="mobile-controls">
+        <div id="d-pad">
+          <div class="d-pad-row">
+            <button id="btn-up" class="control-btn">▲</button>
+          </div>
+          <div class="d-pad-row">
+            <button id="btn-left" class="control-btn">◀</button>
+            <button id="btn-right" class="control-btn">▶</button>
+          </div>
+          <div class="d-pad-row">
+            <button id="btn-down" class="control-btn">▼</button>
+          </div>
+        </div>
+        <div id="action-buttons">
+          <button id="btn-shoot" class="control-btn">🔥</button>
+        </div>
+      </div>
     </div>
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
