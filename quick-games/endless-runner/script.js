@@ -25,48 +25,64 @@ window.addEventListener('resize', () => {
 const AudioContext = window.AudioContext || window.webkitAudioContext
 const audioCtx = new AudioContext()
 
-function playJumpSound() {
-  if (audioCtx.state === 'suspended') audioCtx.resume()
+// Master Gain Node
+const masterGain = audioCtx.createGain()
+masterGain.gain.value = 0.3
+masterGain.connect(audioCtx.destination)
+
+function playSound(
+  type,
+  startFreq,
+  endFreq,
+  duration,
+  volume,
+  rampType = 'exponential'
+) {
   const osc = audioCtx.createOscillator()
   const gain = audioCtx.createGain()
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(300, audioCtx.currentTime)
-  osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1)
-  gain.gain.setValueAtTime(0.1, audioCtx.currentTime)
-  gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
+  osc.type = type
+
+  osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime)
+  if (endFreq) {
+    if (rampType === 'linear') {
+      osc.frequency.linearRampToValueAtTime(
+        endFreq,
+        audioCtx.currentTime + duration
+      )
+    } else {
+      osc.frequency.exponentialRampToValueAtTime(
+        endFreq,
+        audioCtx.currentTime + duration
+      )
+    }
+  }
+
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime)
+  if (rampType === 'linear') {
+    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + duration)
+  } else {
+    gain.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioCtx.currentTime + duration
+    )
+  }
+
   osc.connect(gain)
-  gain.connect(audioCtx.destination)
+  gain.connect(masterGain)
   osc.start()
-  osc.stop(audioCtx.currentTime + 0.1)
+  osc.stop(audioCtx.currentTime + duration)
+}
+
+function playJumpSound() {
+  playSound('sine', 300, 600, 0.1, 0.5, 'linear')
 }
 
 function playScoreSound() {
-  if (audioCtx.state === 'suspended') audioCtx.resume()
-  const osc = audioCtx.createOscillator()
-  const gain = audioCtx.createGain()
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(1200, audioCtx.currentTime)
-  gain.gain.setValueAtTime(0.05, audioCtx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
-  osc.connect(gain)
-  gain.connect(audioCtx.destination)
-  osc.start()
-  osc.stop(audioCtx.currentTime + 0.1)
+  playSound('sine', 1200, null, 0.1, 0.3)
 }
 
 function playCrashSound() {
-  if (audioCtx.state === 'suspended') audioCtx.resume()
-  const osc = audioCtx.createOscillator()
-  const gain = audioCtx.createGain()
-  osc.type = 'sawtooth'
-  osc.frequency.setValueAtTime(100, audioCtx.currentTime)
-  osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3)
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3)
-  osc.connect(gain)
-  gain.connect(audioCtx.destination)
-  osc.start()
-  osc.stop(audioCtx.currentTime + 0.3)
+  playSound('sawtooth', 100, 10, 0.3, 0.8)
 }
 
 // Game State
@@ -385,6 +401,12 @@ document.addEventListener('keyup', (e) => {
 // Touch Controls
 const handleJumpStart = (e) => {
   e.preventDefault()
+
+  // Resume Audio Context on first interaction
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume()
+  }
+
   if (!gameRunning) {
     const startScreen = document.getElementById('start-screen')
     const gameOverScreen = document.getElementById('game-over-screen')

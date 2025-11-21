@@ -14,34 +14,34 @@ window.addEventListener('resize', () => {
 const AudioContext = window.AudioContext || window.webkitAudioContext
 const audioCtx = new AudioContext()
 
-function playShootSound() {
-  if (audioCtx.state === 'suspended') audioCtx.resume()
+// Master Gain Node to control overall volume and prevent clipping
+const masterGain = audioCtx.createGain()
+masterGain.gain.value = 0.3 // Lower volume to prevent distortion
+masterGain.connect(audioCtx.destination)
+
+function playSound(type, startFreq, endFreq, duration, volume) {
   const osc = audioCtx.createOscillator()
   const gain = audioCtx.createGain()
-  osc.type = 'square'
-  osc.frequency.setValueAtTime(880, audioCtx.currentTime)
-  osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.1)
-  gain.gain.setValueAtTime(0.1, audioCtx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
+  osc.type = type
+  osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(
+    endFreq,
+    audioCtx.currentTime + duration
+  )
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration)
   osc.connect(gain)
-  gain.connect(audioCtx.destination)
+  gain.connect(masterGain)
   osc.start()
-  osc.stop(audioCtx.currentTime + 0.1)
+  osc.stop(audioCtx.currentTime + duration)
+}
+
+function playShootSound() {
+  playSound('square', 880, 110, 0.1, 0.5)
 }
 
 function playExplosionSound() {
-  if (audioCtx.state === 'suspended') audioCtx.resume()
-  const osc = audioCtx.createOscillator()
-  const gain = audioCtx.createGain()
-  osc.type = 'sawtooth'
-  osc.frequency.setValueAtTime(100, audioCtx.currentTime)
-  osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3)
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3)
-  osc.connect(gain)
-  gain.connect(audioCtx.destination)
-  osc.start()
-  osc.stop(audioCtx.currentTime + 0.3)
+  playSound('sawtooth', 100, 0.01, 0.3, 0.8)
 }
 
 // Game State
@@ -101,6 +101,11 @@ const mobileControls = document.getElementById('mobile-controls')
 
 const handleJoystickStart = (e) => {
   e.preventDefault()
+
+  // Resume Audio Context on first interaction
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume()
+  }
 
   // Start game if not running
   if (!gameRunning) {
@@ -281,10 +286,24 @@ class Player {
 
     // Auto Fire
     const now = Date.now()
-    if (now - this.lastShot > this.shootDelay) {
+    if (now - this.lastShot > this.shootDelay && this.isEnemyInFront()) {
       this.shoot()
       this.lastShot = now
     }
+  }
+
+  isEnemyInFront() {
+    const playerCenterX = this.x + this.width / 2
+    const detectionWidth = this.width // Width of the detection zone
+
+    return enemies.some((enemy) => {
+      // Check if enemy is above the player (y < player.y)
+      // And if enemy is within the horizontal range of the player
+      return (
+        enemy.y < this.y &&
+        Math.abs(enemy.x - playerCenterX) < enemy.radius + detectionWidth / 2
+      )
+    })
   }
 
   shoot() {
