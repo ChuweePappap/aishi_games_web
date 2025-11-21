@@ -2,8 +2,47 @@ const canvas = document.getElementById('gameCanvas')
 const ctx = canvas.getContext('2d')
 
 // Set canvas size
-canvas.width = 800
-canvas.height = 600
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+})
+
+// Audio Context
+const AudioContext = window.AudioContext || window.webkitAudioContext
+const audioCtx = new AudioContext()
+
+function playShootSound() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.type = 'square'
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.1)
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.start()
+  osc.stop(audioCtx.currentTime + 0.1)
+}
+
+function playExplosionSound() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.type = 'sawtooth'
+  osc.frequency.setValueAtTime(100, audioCtx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3)
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3)
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.start()
+  osc.stop(audioCtx.currentTime + 0.3)
+}
 
 // Game State
 let gameRunning = false
@@ -17,16 +56,6 @@ const keys = {
   ArrowLeft: false,
   ArrowRight: false,
   Space: false,
-}
-
-// Joystick State
-const joystick = {
-  x: 0,
-  y: 0,
-  active: false,
-  originX: 0,
-  originY: 0,
-  maxRadius: 50,
 }
 
 document.addEventListener('keydown', (e) => {
@@ -56,61 +85,46 @@ document.addEventListener('keyup', (e) => {
   }
 })
 
-// Touch Controls
-const setupTouchControl = (btnId, keyName) => {
-  const btn = document.getElementById(btnId)
-  if (!btn) return
-
-  const handleStart = (e) => {
-    e.preventDefault()
-    keys[keyName] = true
-    btn.classList.add('active')
-
-    // Special case for Space to start game
-    if (keyName === 'Space') {
-      if (!gameRunning) {
-        const startScreen = document.getElementById('start-screen')
-        const gameOverScreen = document.getElementById('game-over-screen')
-
-        if (
-          !startScreen.classList.contains('hidden') ||
-          !gameOverScreen.classList.contains('hidden')
-        ) {
-          startGame()
-        }
-      }
-    }
-  }
-
-  const handleEnd = (e) => {
-    e.preventDefault()
-    keys[keyName] = false
-    btn.classList.remove('active')
-  }
-
-  btn.addEventListener('touchstart', handleStart, { passive: false })
-  btn.addEventListener('touchend', handleEnd, { passive: false })
-  btn.addEventListener('mousedown', handleStart)
-  btn.addEventListener('mouseup', handleEnd)
-  btn.addEventListener('mouseleave', handleEnd)
+// Joystick Logic
+const joystick = {
+  x: 0,
+  y: 0,
+  active: false,
+  originX: 0,
+  originY: 0,
+  maxRadius: 50,
 }
 
-setupTouchControl('btn-shoot', 'Space')
-
-// Joystick Logic
-const joystickZone = document.getElementById('joystick-zone')
-const joystickStick = document.querySelector('.joystick-stick')
+const joystickBase = document.getElementById('joystick-base')
+const joystickStick = document.getElementById('joystick-stick')
+const mobileControls = document.getElementById('mobile-controls')
 
 const handleJoystickStart = (e) => {
   e.preventDefault()
+
+  // Start game if not running
+  if (!gameRunning) {
+    const startScreen = document.getElementById('start-screen')
+    const gameOverScreen = document.getElementById('game-over-screen')
+    if (
+      !startScreen.classList.contains('hidden') ||
+      !gameOverScreen.classList.contains('hidden')
+    ) {
+      startGame()
+      return
+    }
+  }
+
   const touch = e.touches ? e.touches[0] : e
-  const rect = joystickZone.getBoundingClientRect()
-  const centerX = rect.left + rect.width / 2
-  const centerY = rect.top + rect.height / 2
 
   joystick.active = true
-  joystick.originX = centerX
-  joystick.originY = centerY
+  joystick.originX = touch.clientX
+  joystick.originY = touch.clientY
+
+  // Show joystick at touch position
+  joystickBase.style.left = touch.clientX + 'px'
+  joystickBase.style.top = touch.clientY + 'px'
+  joystickBase.classList.remove('hidden')
 
   updateJoystick(touch.clientX, touch.clientY)
 }
@@ -127,6 +141,7 @@ const handleJoystickEnd = (e) => {
   joystick.active = false
   joystick.x = 0
   joystick.y = 0
+  joystickBase.classList.add('hidden')
   joystickStick.style.transform = `translate(-50%, -50%)`
 }
 
@@ -147,17 +162,17 @@ const updateJoystick = (clientX, clientY) => {
   joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`
 }
 
-if (joystickZone) {
-  joystickZone.addEventListener('touchstart', handleJoystickStart, {
+if (mobileControls) {
+  mobileControls.addEventListener('touchstart', handleJoystickStart, {
     passive: false,
   })
-  joystickZone.addEventListener('touchmove', handleJoystickMove, {
+  mobileControls.addEventListener('touchmove', handleJoystickMove, {
     passive: false,
   })
-  joystickZone.addEventListener('touchend', handleJoystickEnd, {
+  mobileControls.addEventListener('touchend', handleJoystickEnd, {
     passive: false,
   })
-  joystickZone.addEventListener('mousedown', handleJoystickStart)
+  mobileControls.addEventListener('mousedown', handleJoystickStart)
   window.addEventListener('mousemove', handleJoystickMove)
   window.addEventListener('mouseup', handleJoystickEnd)
 }
@@ -172,7 +187,7 @@ class Player {
     this.speed = 5
     this.color = '#00ffff'
     this.lastShot = 0
-    this.shootDelay = 200
+    this.shootDelay = 150 // Faster fire rate for auto-fire
   }
 
   draw() {
@@ -264,17 +279,17 @@ class Player {
         this.y = canvas.height - this.height
     }
 
-    if (keys.Space) {
-      const now = Date.now()
-      if (now - this.lastShot > this.shootDelay) {
-        this.shoot()
-        this.lastShot = now
-      }
+    // Auto Fire
+    const now = Date.now()
+    if (now - this.lastShot > this.shootDelay) {
+      this.shoot()
+      this.lastShot = now
     }
   }
 
   shoot() {
     projectiles.push(new Projectile(this.x + this.width / 2, this.y))
+    playShootSound()
   }
 }
 
@@ -427,6 +442,7 @@ function checkCollisions() {
       const dist = Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y)
       if (dist - enemy.radius - projectile.radius < 1) {
         createExplosion(enemy.x, enemy.y, enemy.color)
+        playExplosionSound()
         setTimeout(() => {
           enemies.splice(eIndex, 1)
           projectiles.splice(pIndex, 1)
@@ -444,6 +460,7 @@ function checkCollisions() {
       player.y + player.height / 2 - enemy.y
     )
     if (dist - enemy.radius - player.width / 2 < 1) {
+      playExplosionSound()
       gameOver()
     }
   })

@@ -2,8 +2,72 @@ const canvas = document.getElementById('gameCanvas')
 const ctx = canvas.getContext('2d')
 
 // Set canvas size
-canvas.width = 800
-canvas.height = 600
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+  // Reset player position on resize to prevent falling through floor
+  if (player) {
+    player.y = canvas.height - GROUND_HEIGHT - player.height
+  }
+
+  // Reset obstacles Y position
+  if (obstacles) {
+    obstacles.forEach((obs) => {
+      obs.y = canvas.height - GROUND_HEIGHT - obs.height
+    })
+  }
+})
+
+// Audio Context
+const AudioContext = window.AudioContext || window.webkitAudioContext
+const audioCtx = new AudioContext()
+
+function playJumpSound() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(300, audioCtx.currentTime)
+  osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1)
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime)
+  gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.start()
+  osc.stop(audioCtx.currentTime + 0.1)
+}
+
+function playScoreSound() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(1200, audioCtx.currentTime)
+  gain.gain.setValueAtTime(0.05, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1)
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.start()
+  osc.stop(audioCtx.currentTime + 0.1)
+}
+
+function playCrashSound() {
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  const osc = audioCtx.createOscillator()
+  const gain = audioCtx.createGain()
+  osc.type = 'sawtooth'
+  osc.frequency.setValueAtTime(100, audioCtx.currentTime)
+  osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3)
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3)
+  osc.connect(gain)
+  gain.connect(audioCtx.destination)
+  osc.start()
+  osc.stop(audioCtx.currentTime + 0.3)
+}
 
 // Game State
 let gameRunning = false
@@ -200,6 +264,7 @@ class Player {
     if (this.grounded) {
       this.dy = JUMP_FORCE
       this.grounded = false
+      playJumpSound()
     }
   }
 }
@@ -227,6 +292,7 @@ class Obstacle {
       this.markedForDeletion = true
       score++
       document.getElementById('score').innerText = 'Score: ' + score
+      playScoreSound()
 
       // Progressive Speed Increase
       // Increase speed by 0.1 for every point scored
@@ -380,6 +446,7 @@ function checkCollisions() {
       player.y < obs.y + obs.height &&
       player.y + player.height > obs.y
     ) {
+      playCrashSound()
       gameOver()
       return true
     }

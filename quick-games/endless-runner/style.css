@@ -14,11 +14,9 @@ body {
 #game-container {
   position: relative;
   width: 100%;
-  max-width: 800px;
-  aspect-ratio: 4/3;
-  max-height: 100vh;
-  box-shadow: 0 0 20px rgba(0, 255, 128, 0.2);
-  border: 2px solid #333;
+  height: 100%;
+  box-shadow: none;
+  border: none;
   background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
   margin: auto;
   overflow: hidden;
