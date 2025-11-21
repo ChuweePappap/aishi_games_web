@@ -19,6 +19,16 @@ const keys = {
   Space: false,
 }
 
+// Joystick State
+const joystick = {
+  x: 0,
+  y: 0,
+  active: false,
+  originX: 0,
+  originY: 0,
+  maxRadius: 50,
+}
+
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     if (!gameRunning) {
@@ -85,11 +95,72 @@ const setupTouchControl = (btnId, keyName) => {
   btn.addEventListener('mouseleave', handleEnd)
 }
 
-setupTouchControl('btn-up', 'ArrowUp')
-setupTouchControl('btn-down', 'ArrowDown')
-setupTouchControl('btn-left', 'ArrowLeft')
-setupTouchControl('btn-right', 'ArrowRight')
 setupTouchControl('btn-shoot', 'Space')
+
+// Joystick Logic
+const joystickZone = document.getElementById('joystick-zone')
+const joystickStick = document.querySelector('.joystick-stick')
+
+const handleJoystickStart = (e) => {
+  e.preventDefault()
+  const touch = e.touches ? e.touches[0] : e
+  const rect = joystickZone.getBoundingClientRect()
+  const centerX = rect.left + rect.width / 2
+  const centerY = rect.top + rect.height / 2
+
+  joystick.active = true
+  joystick.originX = centerX
+  joystick.originY = centerY
+
+  updateJoystick(touch.clientX, touch.clientY)
+}
+
+const handleJoystickMove = (e) => {
+  if (!joystick.active) return
+  e.preventDefault()
+  const touch = e.touches ? e.touches[0] : e
+  updateJoystick(touch.clientX, touch.clientY)
+}
+
+const handleJoystickEnd = (e) => {
+  e.preventDefault()
+  joystick.active = false
+  joystick.x = 0
+  joystick.y = 0
+  joystickStick.style.transform = `translate(-50%, -50%)`
+}
+
+const updateJoystick = (clientX, clientY) => {
+  let dx = clientX - joystick.originX
+  let dy = clientY - joystick.originY
+  const distance = Math.hypot(dx, dy)
+
+  if (distance > joystick.maxRadius) {
+    const angle = Math.atan2(dy, dx)
+    dx = Math.cos(angle) * joystick.maxRadius
+    dy = Math.sin(angle) * joystick.maxRadius
+  }
+
+  joystick.x = dx / joystick.maxRadius
+  joystick.y = dy / joystick.maxRadius
+
+  joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`
+}
+
+if (joystickZone) {
+  joystickZone.addEventListener('touchstart', handleJoystickStart, {
+    passive: false,
+  })
+  joystickZone.addEventListener('touchmove', handleJoystickMove, {
+    passive: false,
+  })
+  joystickZone.addEventListener('touchend', handleJoystickEnd, {
+    passive: false,
+  })
+  joystickZone.addEventListener('mousedown', handleJoystickStart)
+  window.addEventListener('mousemove', handleJoystickMove)
+  window.addEventListener('mouseup', handleJoystickEnd)
+}
 
 // Game Objects
 class Player {
@@ -108,29 +179,90 @@ class Player {
     ctx.save()
     ctx.translate(this.x + this.width / 2, this.y + this.height / 2)
 
-    // Draw ship body
-    ctx.beginPath()
-    ctx.moveTo(0, -this.height / 2)
-    ctx.lineTo(this.width / 2, this.height / 2)
-    ctx.lineTo(0, this.height / 2 - 10)
-    ctx.lineTo(-this.width / 2, this.height / 2)
-    ctx.closePath()
+    // Engine Thrusters (animated)
+    const thrust = Math.random() * 10 + 10
+    ctx.fillStyle = '#ff00ff'
+    ctx.shadowBlur = 20
+    ctx.shadowColor = '#ff00ff'
 
-    ctx.fillStyle = this.color
+    // Left Engine Flame
+    ctx.beginPath()
+    ctx.moveTo(-12, this.height / 2 - 5)
+    ctx.lineTo(-8, this.height / 2 + thrust)
+    ctx.lineTo(-4, this.height / 2 - 5)
+    ctx.fill()
+
+    // Right Engine Flame
+    ctx.beginPath()
+    ctx.moveTo(4, this.height / 2 - 5)
+    ctx.lineTo(8, this.height / 2 + thrust)
+    ctx.lineTo(12, this.height / 2 - 5)
+    ctx.fill()
+
+    // Main Body
+    ctx.fillStyle = '#1a1a2e' // Dark metallic blue
+    ctx.strokeStyle = this.color
+    ctx.lineWidth = 2
     ctx.shadowBlur = 15
     ctx.shadowColor = this.color
+
+    ctx.beginPath()
+    // Nose
+    ctx.moveTo(0, -this.height / 2)
+    // Right Wing
+    ctx.lineTo(this.width / 2, this.height / 2)
+    ctx.lineTo(10, this.height / 2 - 10) // Engine cutout
+    ctx.lineTo(0, this.height / 2) // Tail center
+    ctx.lineTo(-10, this.height / 2 - 10) // Engine cutout
+    ctx.lineTo(-this.width / 2, this.height / 2)
+    // Left Wing
+    ctx.closePath()
+
     ctx.fill()
+    ctx.stroke()
+
+    // Cockpit
+    ctx.fillStyle = '#ffffff'
+    ctx.shadowBlur = 10
+    ctx.shadowColor = '#ffffff'
+    ctx.beginPath()
+    ctx.ellipse(0, -5, 4, 8, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Energy Lines on Wings
+    ctx.strokeStyle = '#ff00ff'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(-this.width / 4, 0)
+    ctx.lineTo(-this.width / 2, this.height / 2)
+    ctx.moveTo(this.width / 4, 0)
+    ctx.lineTo(this.width / 2, this.height / 2)
+    ctx.stroke()
 
     ctx.restore()
   }
 
   update() {
+    // Keyboard Movement
     if (keys.ArrowLeft && this.x > 0) this.x -= this.speed
     if (keys.ArrowRight && this.x < canvas.width - this.width)
       this.x += this.speed
     if (keys.ArrowUp && this.y > 0) this.y -= this.speed
     if (keys.ArrowDown && this.y < canvas.height - this.height)
       this.y += this.speed
+
+    // Joystick Movement
+    if (joystick.active || joystick.x !== 0 || joystick.y !== 0) {
+      this.x += joystick.x * this.speed
+      this.y += joystick.y * this.speed
+
+      // Boundary checks
+      if (this.x < 0) this.x = 0
+      if (this.x > canvas.width - this.width) this.x = canvas.width - this.width
+      if (this.y < 0) this.y = 0
+      if (this.y > canvas.height - this.height)
+        this.y = canvas.height - this.height
+    }
 
     if (keys.Space) {
       const now = Date.now()

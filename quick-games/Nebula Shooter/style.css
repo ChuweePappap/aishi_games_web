@@ -33,30 +33,56 @@ canvas {
 
 #mobile-controls {
   position: absolute;
-  bottom: 10px;
+  bottom: 20px;
   left: 0;
   width: 100%;
-  height: auto;
+  height: 150px;
   display: flex;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 40px;
   box-sizing: border-box;
   pointer-events: none;
   z-index: 100;
 }
 
-#d-pad,
-#action-buttons {
-  pointer-events: auto; /* Re-enable clicks for buttons */
+#joystick-zone {
+  pointer-events: auto;
+  width: 150px;
+  height: 150px;
+  position: relative;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
-.d-pad-row {
+.joystick-base {
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 50%;
+  position: relative;
+}
+
+.joystick-stick {
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 255, 255, 0.5);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+  pointer-events: none; /* Let events pass to zone */
+}
+
+#action-buttons {
+  pointer-events: auto;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .control-btn {
