@@ -54,6 +54,67 @@
       .game-item {
         margin: 1rem 0;
       }
+
+      /* Mobile Controls */
+      #mobile-controls {
+        position: fixed;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        height: 150px;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 40px;
+        box-sizing: border-box;
+        pointer-events: none;
+        z-index: 100;
+      }
+      #d-pad, #action-buttons {
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .d-pad-row {
+        display: flex;
+        gap: 10px;
+      }
+      .control-btn {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        color: white;
+        font-size: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        user-select: none;
+        touch-action: none;
+        cursor: pointer;
+        margin: 5px;
+        transition: background 0.1s, transform 0.1s;
+      }
+      .control-btn:active, .control-btn.active {
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(0.95);
+      }
+      #btn-select {
+        width: 80px;
+        height: 80px;
+        font-size: 32px;
+        border-color: rgba(255, 255, 255, 0.8);
+      }
+      
+      /* Selection Highlight */
+      .game-link.selected {
+        background: rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        border-color: white;
+      }
     </style>
   </head>
   <body>
@@ -75,11 +136,92 @@
             🟦 Play Block Game
           </a>
         </div>
+        <div class="game-item">
+          <a href="quick-games/Nebula Shooter/" class="game-link">
+            🌌 Play Nebula Shooter
+          </a>
+        </div>
       </div>
 
       <p style="margin-top: 3rem; font-size: 0.9rem; opacity: 0.7">
         More games coming soon...
       </p>
     </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <div id="d-pad">
+            <div class="d-pad-row">
+                <button id="btn-up" class="control-btn">▲</button>
+            </div>
+            <div class="d-pad-row">
+                <button id="btn-down" class="control-btn">▼</button>
+            </div>
+        </div>
+        <div id="action-buttons">
+            <button id="btn-select" class="control-btn">✓</button>
+        </div>
+    </div>
+
+    <script>
+        const links = document.querySelectorAll('.game-link');
+        let currentIndex = -1;
+
+        function selectLink(index) {
+            links.forEach(link => link.classList.remove('selected'));
+            if (index >= 0 && index < links.length) {
+                currentIndex = index;
+                links[currentIndex].classList.add('selected');
+                links[currentIndex].focus();
+            }
+        }
+
+        function moveSelection(direction) {
+            if (currentIndex === -1) {
+                currentIndex = 0;
+            } else {
+                currentIndex += direction;
+                if (currentIndex < 0) currentIndex = links.length - 1;
+                if (currentIndex >= links.length) currentIndex = 0;
+            }
+            selectLink(currentIndex);
+        }
+
+        function activateSelection() {
+            if (currentIndex >= 0 && currentIndex < links.length) {
+                window.location.href = links[currentIndex].href;
+            }
+        }
+
+        // Touch/Click Handlers
+        const setupControl = (btnId, action) => {
+            const btn = document.getElementById(btnId);
+            const handleStart = (e) => {
+                e.preventDefault();
+                btn.classList.add('active');
+                action();
+            };
+            const handleEnd = (e) => {
+                e.preventDefault();
+                btn.classList.remove('active');
+            };
+            btn.addEventListener('touchstart', handleStart, { passive: false });
+            btn.addEventListener('touchend', handleEnd, { passive: false });
+            btn.addEventListener('mousedown', handleStart);
+            btn.addEventListener('mouseup', handleEnd);
+            btn.addEventListener('mouseleave', handleEnd);
+        };
+
+        setupControl('btn-up', () => moveSelection(-1));
+        setupControl('btn-down', () => moveSelection(1));
+        setupControl('btn-select', activateSelection);
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') moveSelection(-1);
+            if (e.key === 'ArrowDown') moveSelection(1);
+            if (e.key === 'Enter' || e.key === ' ') activateSelection();
+        });
+    </script>
   </body>
 </html>
