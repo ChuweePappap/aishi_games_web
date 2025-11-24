@@ -505,7 +505,7 @@ h1 {
   height: 200px;
   background-repeat: no-repeat;
   background-size: 600% 400%; /* 6 cols, 4 rows */
-  image-rendering: pixelated;
+  /* image-rendering: pixelated; Removed for smoother look */
   margin: 0 auto;
   display: block;
 }

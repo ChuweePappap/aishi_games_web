@@ -441,6 +441,10 @@ function evolve(newStage) {
   // Play specific evolution effect
   playEvolutionEffect(oldStage, newStage)
 
+  // Force animation reset for new stage
+  currentAnimAction = null
+  if (animationInterval) clearInterval(animationInterval)
+  
   updateUI()
 }
 
@@ -455,10 +459,9 @@ function pet() {
     config.stages[gameState.stage].spriteSheet ||
     config.stages[gameState.stage].animations
   ) {
-    setSpriteAnimation('play') // Use play animation for petting
-    setTimeout(() => {
+    setSpriteAnimation('play', 3, () => {
       if (!gameState.isSleeping) setSpriteAnimation('idle')
-    }, 1000)
+    })
   } else {
     animateDragon('bounce')
   }
@@ -484,10 +487,9 @@ function feed() {
     config.stages[gameState.stage].spriteSheet ||
     config.stages[gameState.stage].animations
   ) {
-    setSpriteAnimation('eat')
-    setTimeout(() => {
+    setSpriteAnimation('eat', 3, () => {
       if (!gameState.isSleeping) setSpriteAnimation('idle')
-    }, 1000)
+    })
   } else {
     animateDragon('bounce')
   }
@@ -514,10 +516,9 @@ function play() {
     config.stages[gameState.stage].spriteSheet ||
     config.stages[gameState.stage].animations
   ) {
-    setSpriteAnimation('play')
-    setTimeout(() => {
+    setSpriteAnimation('play', 3, () => {
       if (!gameState.isSleeping) setSpriteAnimation('idle')
-    }, 1000)
+    })
   } else {
     animateDragon('shake')
   }
@@ -729,7 +730,7 @@ function updateUI() {
   }
 }
 
-function setSpriteAnimation(action) {
+function setSpriteAnimation(action, loopCount = 0, onComplete = null) {
   const stageConfig = config.stages[gameState.stage]
 
   // New JS Animation System
@@ -743,7 +744,8 @@ function setSpriteAnimation(action) {
       }
     }
 
-    if (currentAnimAction === action) return // Already playing
+    // If we are forcing a loop (like eating/playing), we allow re-setting the same animation
+    if (currentAnimAction === action && loopCount === 0) return // Already playing infinite loop
 
     currentAnimAction = action
     const animData = stageConfig.animations[action]
@@ -759,12 +761,23 @@ function setSpriteAnimation(action) {
     dragonSprite.style.backgroundImage = ''
 
     let frame = 1
+    let loops = 0
+    
     const playFrame = () => {
       dragonSprite.style.backgroundImage = `url('${animData.folder}/${frame}.png')`
       dragonSprite.style.backgroundSize = 'contain'
       dragonSprite.style.backgroundPosition = 'center'
       frame++
-      if (frame > animData.frames) frame = 1
+      
+      if (frame > animData.frames) {
+        frame = 1
+        loops++
+        
+        if (loopCount > 0 && loops >= loopCount) {
+          clearInterval(animationInterval)
+          if (onComplete) onComplete()
+        }
+      }
     }
 
     playFrame()
