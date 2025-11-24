@@ -207,7 +207,7 @@ function preloadAssets() {
     if (stage.img) {
       imagesToPreload.push(stage.img)
     }
-    
+
     if (stage.animations) {
       for (const animKey in stage.animations) {
         const anim = stage.animations[animKey]
