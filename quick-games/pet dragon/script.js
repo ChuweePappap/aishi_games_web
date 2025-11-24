@@ -10,8 +10,17 @@ const gameState = {
   nextAgeUpdate: Date.now() + 60000, // Will be overwritten by config.dayLength if loaded
 }
 
+let isResetting = false
+let gameLoopInterval
+let ageLoopInterval
+
 const config = {
-  decayRate: 2000, // ms to decrease stats
+  decayRate: 5000, // 5 seconds
+  decayAmount: {
+    hunger: 0.14, // Lasts ~1 hour (100 / 0.14 * 5s = 3571s)
+    happiness: 0.07, // Lasts ~2 hours
+    energy: 0.07 // Lasts ~2 hours
+  },
   dayLength: 60000, // ms for a game day (1 minute = 1 day for fast progression demo)
   stages: {
     egg: { img: 'dragon centered/01_v1_egg.png', nextStageAt: 60 }, // 1 hour
@@ -20,10 +29,40 @@ const config = {
     child: { img: 'dragon centered/04_v1_child.png', nextStageAt: 2940 }, // +24 hours (49h total)
     teen: { img: 'dragon centered/05_v1_teen.png', nextStageAt: 5820 }, // +48 hours (97h total)
     adult: { img: 'dragon centered/06a_v1_good_adult.png', nextStageAt: 10140 }, // +72 hours (169h total)
-    adult_grumpy: { img: 'dragon centered/06b_v1_grumpy_adult.png', nextStageAt: 10140 }, // Variant
+    adult_grumpy: {
+      img: 'dragon centered/06b_v1_grumpy_adult.png',
+      nextStageAt: 10140,
+    }, // Variant
     elder: { img: 'dragon centered/07a_v1_good_elder.png', nextStageAt: 14460 }, // +72 hours (241h total) - Max 3 days per stage
-    elder_grumpy: { img: 'dragon centered/07b_v1_grumpy_elder.png', nextStageAt: 14460 } // Variant
+    elder_grumpy: {
+      img: 'dragon centered/07b_v1_grumpy_elder.png',
+      nextStageAt: 14460,
+    }, // Variant
   },
+}
+
+// Check for DEV mode from env.js
+if (typeof window.ENV !== 'undefined' && window.ENV.DEV) {
+  console.log('🔧 DEV MODE ENABLED: Fast Evolution (1 min per stage)')
+
+  // Map stages to their sequential order (1 min, 2 mins, 3 mins...)
+  const stageOrder = {
+    egg: 1,
+    baby: 2,
+    toddler: 3,
+    child: 4,
+    teen: 5,
+    adult: 6,
+    adult_grumpy: 6,
+    elder: 7,
+    elder_grumpy: 7,
+  }
+
+  for (const [stage, order] of Object.entries(stageOrder)) {
+    if (config.stages[stage]) {
+      config.stages[stage].nextStageAt = order
+    }
+  }
 }
 
 // DOM Elements
@@ -43,6 +82,7 @@ const btnInfo = document.getElementById('info-btn')
 const infoModal = document.getElementById('info-modal')
 const btnCloseInfo = document.getElementById('close-info')
 const evolutionList = document.getElementById('evolution-list')
+const btnEvolve = document.getElementById('btn-evolve')
 
 // Initialize Game
 function init() {
@@ -53,8 +93,14 @@ function init() {
     gameState.nextAgeUpdate = Date.now() + config.dayLength
   }
 
+  // If age is 0 (new game), ensure stage is egg
+  if (gameState.age === 0) {
+    gameState.stage = 'egg'
+  }
+
   syncStageWithAge() // Fix for old saves with new config
   calculateOfflineProgress()
+  populateInfoModal()
   updateUI()
   startGameLoop()
 }
@@ -88,6 +134,7 @@ function syncStageWithAge() {
 
 // Save/Load System
 function saveGame() {
+  if (isResetting) return
   gameState.lastLogin = Date.now()
   localStorage.setItem('dragonPetSave', JSON.stringify(gameState))
 }
@@ -106,124 +153,129 @@ function resetGame() {
       'Are you sure you want to reset your dragon? This cannot be undone.'
     )
   ) {
+    isResetting = true
+    clearInterval(gameLoopInterval)
+    clearInterval(ageLoopInterval)
     localStorage.removeItem('dragonPetSave')
-    location.reload()
+    console.log('Game reset. Reloading...')
+    // Force reload from server to avoid cache issues
+    location.reload(true)
   }
 }
 
 // Game Logic
 function calculateOfflineProgress() {
-    const now = Date.now();
-    const timeDiff = now - gameState.lastLogin;
-    
-    // Calculate how many decay cycles passed
-    const cycles = Math.floor(timeDiff / config.decayRate);
-    
-    // Calculate effective growth time (stops when hunger hits 0)
-    // Hunger decays by 2 per cycle (2000ms)
-    // Cycles until starvation = currentHunger / 2
-    const cyclesToStarve = Math.ceil(gameState.hunger / 2);
-    const timeToStarve = cyclesToStarve * config.decayRate;
-    
-    // If we were sleeping, we don't starve, so we grow full time
-    // If not sleeping, we grow only until we starve
-    let effectiveGrowthTime = timeDiff;
-    if (!gameState.isSleeping) {
-        effectiveGrowthTime = Math.min(timeDiff, timeToStarve);
+  const now = Date.now()
+  const timeDiff = now - gameState.lastLogin
+
+  // Calculate how many decay cycles passed
+  const cycles = Math.floor(timeDiff / config.decayRate)
+
+  // Calculate effective growth time (stops when hunger hits 0)
+  // Hunger decays by config.decayAmount.hunger per cycle
+  // Cycles until starvation = currentHunger / decayAmount
+  const cyclesToStarve = Math.ceil(gameState.hunger / config.decayAmount.hunger)
+  const timeToStarve = cyclesToStarve * config.decayRate
+
+  // If we were sleeping, we don't starve, so we grow full time
+  // If not sleeping, we grow only until we starve
+  let effectiveGrowthTime = timeDiff
+  if (!gameState.isSleeping) {
+    effectiveGrowthTime = Math.min(timeDiff, timeToStarve)
+  }
+
+  if (cycles > 0 && !gameState.isSleeping) {
+    decreaseStats(cycles)
+    // Cap stats at 0
+    gameState.hunger = Math.max(0, gameState.hunger)
+    gameState.happiness = Math.max(0, gameState.happiness)
+    gameState.energy = Math.max(0, gameState.energy)
+  } else if (gameState.isSleeping) {
+    // Recover energy while sleeping offline
+    const energyGain = cycles * 5
+    gameState.energy = Math.min(100, gameState.energy + energyGain)
+    // Wake up if fully rested
+    if (gameState.energy >= 100) {
+      gameState.isSleeping = false
     }
-    
-    if (cycles > 0 && !gameState.isSleeping) {
-        decreaseStats(cycles);
-        // Cap stats at 0
-        gameState.hunger = Math.max(0, gameState.hunger);
-        gameState.happiness = Math.max(0, gameState.happiness);
-        gameState.energy = Math.max(0, gameState.energy);
-    } else if (gameState.isSleeping) {
-        // Recover energy while sleeping offline
-        const energyGain = cycles * 5;
-        gameState.energy = Math.min(100, gameState.energy + energyGain);
-        // Wake up if fully rested
-        if (gameState.energy >= 100) {
-            gameState.isSleeping = false;
-        }
-    }
-    
-    // Age progression offline
-    // Only advance age if we had effective growth time
-    if (effectiveGrowthTime > 0) {
-        // We need to advance nextAgeUpdate based on effectiveGrowthTime
-        // But nextAgeUpdate is a timestamp in the future.
-        // If we missed it, we age up.
-        
-        // Simpler approach:
-        // Calculate how many minutes passed during effective growth
-        const minutesPassed = Math.floor(effectiveGrowthTime / config.dayLength);
-        
-        if (minutesPassed > 0) {
-            gameState.age += minutesPassed;
-            
-            // Adjust nextAgeUpdate
-            // It should be: now + (time remaining for next minute)
-            // But we need to account for the fact that we might have stopped growing halfway
-            
-            // Let's just reset nextAgeUpdate to be consistent with current time + remainder
-            // This is a bit of a hack but works for "pausing" logic
-            const timeIntoNextDay = effectiveGrowthTime % config.dayLength;
-            gameState.nextAgeUpdate = now + (config.dayLength - timeIntoNextDay);
-            
-            checkEvolution();
-        } else {
-            // If we didn't pass a full minute, we still need to shift nextAgeUpdate
-            // if we were starving part of the time.
-            // Actually, if we starved, we just push nextAgeUpdate forward by the starved time.
-            const starvedTime = Math.max(0, timeDiff - effectiveGrowthTime);
-            gameState.nextAgeUpdate += starvedTime;
-        }
+  }
+
+  // Age progression offline
+  // Only advance age if we had effective growth time
+  if (effectiveGrowthTime > 0) {
+    // We need to advance nextAgeUpdate based on effectiveGrowthTime
+    // But nextAgeUpdate is a timestamp in the future.
+    // If we missed it, we age up.
+
+    // Simpler approach:
+    // Calculate how many minutes passed during effective growth
+    const minutesPassed = Math.floor(effectiveGrowthTime / config.dayLength)
+
+    if (minutesPassed > 0) {
+      gameState.age += minutesPassed
+
+      // Adjust nextAgeUpdate
+      // It should be: now + (time remaining for next minute)
+      // But we need to account for the fact that we might have stopped growing halfway
+
+      // Let's just reset nextAgeUpdate to be consistent with current time + remainder
+      // This is a bit of a hack but works for "pausing" logic
+      const timeIntoNextDay = effectiveGrowthTime % config.dayLength
+      gameState.nextAgeUpdate = now + (config.dayLength - timeIntoNextDay)
+
+      checkEvolution()
     } else {
-        // We were starving the whole time (or hunger was 0)
-        // Push nextAgeUpdate forward by the entire duration to "pause" it
-        gameState.nextAgeUpdate += timeDiff;
+      // If we didn't pass a full minute, we still need to shift nextAgeUpdate
+      // if we were starving part of the time.
+      // Actually, if we starved, we just push nextAgeUpdate forward by the starved time.
+      const starvedTime = Math.max(0, timeDiff - effectiveGrowthTime)
+      gameState.nextAgeUpdate += starvedTime
     }
+  } else {
+    // We were starving the whole time (or hunger was 0)
+    // Push nextAgeUpdate forward by the entire duration to "pause" it
+    gameState.nextAgeUpdate += timeDiff
+  }
 }
 
 function startGameLoop() {
-    // Stat decay loop
-    setInterval(() => {
-        if (!gameState.isSleeping) {
-            decreaseStats(1);
-        } else {
-            gameState.energy = Math.min(100, gameState.energy + 5);
-            if (gameState.energy >= 100) {
-                wakeUp();
-            }
-        }
-        updateUI();
-        saveGame();
-    }, config.decayRate);
+  // Stat decay loop
+  gameLoopInterval = setInterval(() => {
+    if (!gameState.isSleeping) {
+      decreaseStats(1)
+    } else {
+      gameState.energy = Math.min(100, gameState.energy + 5)
+      if (gameState.energy >= 100) {
+        wakeUp()
+      }
+    }
+    updateUI()
+    saveGame()
+  }, config.decayRate)
 
-    // Aging and Countdown loop (1 second tick)
-    setInterval(() => {
-        const now = Date.now();
-        
-        // Only age if not starving (hunger > 0)
-        if (gameState.hunger > 0) {
-            if (now >= gameState.nextAgeUpdate) {
-                gameState.age++;
-                gameState.nextAgeUpdate += config.dayLength;
-                checkEvolution();
-                updateUI();
-            }
-        } else {
-            // If starving, push the next update time forward so it doesn't get closer
-            // Effectively pausing the countdown
-            gameState.nextAgeUpdate += 1000;
-        }
-        
-        updateCountdown();
-    }, 1000);
-    
-    // Initial countdown update
-    updateCountdown();
+  // Aging and Countdown loop (1 second tick)
+  ageLoopInterval = setInterval(() => {
+    const now = Date.now()
+
+    // Only age if not starving (hunger > 0)
+    if (gameState.hunger > 0) {
+      if (now >= gameState.nextAgeUpdate) {
+        gameState.age++
+        gameState.nextAgeUpdate += config.dayLength
+        checkEvolution()
+        updateUI()
+      }
+    } else {
+      // If starving, push the next update time forward so it doesn't get closer
+      // Effectively pausing the countdown
+      gameState.nextAgeUpdate += 1000
+    }
+
+    updateCountdown()
+  }, 1000)
+
+  // Initial countdown update
+  updateCountdown()
 }
 
 function updateCountdown() {
@@ -276,9 +328,9 @@ function updateCountdown() {
 
 function decreaseStats(multiplier) {
   // Decay amounts
-  const hungerDecay = 2 * multiplier
-  const happinessDecay = 1 * multiplier
-  const energyDecay = 1 * multiplier
+  const hungerDecay = config.decayAmount.hunger * multiplier
+  const happinessDecay = config.decayAmount.happiness * multiplier
+  const energyDecay = config.decayAmount.energy * multiplier
 
   gameState.hunger = Math.max(0, gameState.hunger - hungerDecay)
   gameState.happiness = Math.max(0, gameState.happiness - happinessDecay)
@@ -286,55 +338,70 @@ function decreaseStats(multiplier) {
 }
 
 function checkEvolution() {
-    const currentStageConfig = config.stages[gameState.stage];
-    if (currentStageConfig && gameState.age >= currentStageConfig.nextStageAt) {
-        // Branching Logic
-        let nextStage = null;
-        
-        if (gameState.stage === 'teen') {
-            // Teen -> Adult (Good or Grumpy)
-            if (gameState.happiness < 50) {
-                nextStage = 'adult_grumpy';
-            } else {
-                nextStage = 'adult';
-            }
-        } else if (gameState.stage === 'adult' || gameState.stage === 'adult_grumpy') {
-            // Adult -> Elder (Good or Grumpy)
-            if (gameState.happiness < 50) {
-                nextStage = 'elder_grumpy';
-            } else {
-                nextStage = 'elder';
-            }
-        } else {
-            // Linear progression for others
-            const stages = Object.keys(config.stages);
-            const currentIndex = stages.indexOf(gameState.stage);
-            // We need to be careful because we added variants to the keys
-            // The linear order in config.stages is: egg, baby, toddler, child, teen, adult, adult_grumpy, elder, elder_grumpy
-            // This order is not strictly linear anymore.
-            
-            // Hardcoded linear map for early stages
-            const linearMap = {
-                'egg': 'baby',
-                'baby': 'toddler',
-                'toddler': 'child',
-                'child': 'teen'
-            };
-            
-            nextStage = linearMap[gameState.stage];
-        }
-        
-        if (nextStage) {
-            evolve(nextStage);
-        }
+  const currentStageConfig = config.stages[gameState.stage]
+  if (currentStageConfig && gameState.age >= currentStageConfig.nextStageAt) {
+    // Branching Logic
+    let nextStage = null
+
+    if (gameState.stage === 'teen') {
+      // Teen -> Adult (Good or Grumpy)
+      if (gameState.happiness < 50) {
+        nextStage = 'adult_grumpy'
+      } else {
+        nextStage = 'adult'
+      }
+    } else if (
+      gameState.stage === 'adult' ||
+      gameState.stage === 'adult_grumpy'
+    ) {
+      // Adult -> Elder (Good or Grumpy)
+      if (gameState.happiness < 50) {
+        nextStage = 'elder_grumpy'
+      } else {
+        nextStage = 'elder'
+      }
+    } else {
+      // Linear progression for others
+      const linearMap = {
+        egg: 'baby',
+        baby: 'toddler',
+        toddler: 'child',
+        child: 'teen',
+      }
+
+      nextStage = linearMap[gameState.stage]
     }
+
+    if (nextStage) {
+      // Instead of evolving immediately, show the button
+      showEvolutionReady(nextStage)
+    }
+  }
+}
+
+function showEvolutionReady(nextStage) {
+  btnEvolve.classList.remove('hidden')
+  btnEvolve.dataset.nextStage = nextStage
+  countdownDisplay.textContent = 'Evolution Ready!'
+}
+
+function triggerEvolution() {
+  const nextStage = btnEvolve.dataset.nextStage
+  if (nextStage) {
+    evolve(nextStage)
+    btnEvolve.classList.add('hidden')
+  }
 }
 
 function evolve(newStage) {
+  const oldStage = gameState.stage
   gameState.stage = newStage
   showNotification(`Your dragon evolved into a ${newStage}!`)
-  playSound('evolve') // Placeholder
-  animateDragon('bounce')
+
+  // Play specific evolution effect
+  playEvolutionEffect(oldStage, newStage)
+
+  updateUI()
 }
 
 // Actions
@@ -465,6 +532,44 @@ function populateEvolutionList() {
     li.appendChild(timeSpan)
     evolutionList.appendChild(li)
   })
+}
+
+function populateInfoModal() {
+  evolutionList.innerHTML = ''
+  const stages = config.stages
+
+  for (const key in stages) {
+    if (key.includes('grumpy')) continue // Skip variants in the main list to keep it clean
+
+    const stageData = stages[key]
+    const li = document.createElement('li')
+
+    const nameSpan = document.createElement('span')
+    nameSpan.className = 'stage-name'
+    nameSpan.textContent = key.charAt(0).toUpperCase() + key.slice(1)
+
+    const timeSpan = document.createElement('span')
+    timeSpan.className = 'stage-time'
+
+    // Format time
+    const minutes = stageData.nextStageAt
+    if (key === 'elder') {
+      timeSpan.textContent = 'Max Level'
+    } else {
+      const hours = Math.floor(minutes / 60)
+      const days = Math.floor(hours / 24)
+      if (days > 0) {
+        const remHours = hours % 24
+        timeSpan.textContent = `Next: ${days}d ${remHours}h`
+      } else {
+        timeSpan.textContent = `Next: ${hours}h`
+      }
+    }
+
+    li.appendChild(nameSpan)
+    li.appendChild(timeSpan)
+    evolutionList.appendChild(li)
+  }
 }
 
 // UI Updates
@@ -722,6 +827,8 @@ infoModal.addEventListener('click', (e) => {
     toggleInfoModal()
   }
 })
+
+btnEvolve.addEventListener('click', triggerEvolution)
 
 // Start
 init()
