@@ -16,13 +16,27 @@
     <div class="game-container">
       <header>
         <h1>Dragon Pet</h1>
-        <div class="header-info">
-          <div class="age-display">Age: <span id="age">0m</span></div>
-          <div id="evolution-countdown" class="countdown">Next: --:--</div>
-        </div>
-      </header>
+            <div class="header-info">
+                <div class="age-display">Age: <span id="age">0m</span></div>
+                <div class="countdown-wrapper">
+                    <div id="evolution-countdown" class="countdown">Next: --:--</div>
+                    <button id="info-btn" class="info-btn">i</button>
+                </div>
+            </div>
+        </header>
 
-      <div class="dragon-stage">
+        <!-- Info Modal -->
+        <div id="info-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Evolution Guide</h3>
+                    <button id="close-info" class="close-btn">&times;</button>
+                </div>
+                <ul id="evolution-list">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+        </div>      <div class="dragon-stage">
         <div class="dragon-container">
           <img
             id="dragon-img"

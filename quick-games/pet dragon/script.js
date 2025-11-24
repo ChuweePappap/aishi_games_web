@@ -11,18 +11,20 @@ const gameState = {
 }
 
 const config = {
-    decayRate: 2000, // ms to decrease stats
-    dayLength: 60000, // ms for a game day (1 minute = 1 day for fast progression demo)
-    stages: {
-        egg: { img: 'dragon centered/01_v1_egg.png', nextStageAt: 60 }, // 1 hour
-        baby: { img: 'dragon centered/02_v1_baby.png', nextStageAt: 540 }, // +8 hours (9h total)
-        toddler: { img: 'dragon centered/03_v1_toddler.png', nextStageAt: 1500 }, // +16 hours (25h total)
-        child: { img: 'dragon centered/04_v1_child.png', nextStageAt: 2940 }, // +24 hours (49h total)
-        teen: { img: 'dragon centered/05_v1_teen.png', nextStageAt: 5820 }, // +48 hours (97h total)
-        adult: { img: 'dragon centered/06a_v1_good_adult.png', nextStageAt: 10140 }, // +72 hours (169h total)
-        elder: { img: 'dragon centered/07a_v1_good_elder.png', nextStageAt: 20000 } // End game or just stay old
-    }
-};
+  decayRate: 2000, // ms to decrease stats
+  dayLength: 60000, // ms for a game day (1 minute = 1 day for fast progression demo)
+  stages: {
+    egg: { img: 'dragon centered/01_v1_egg.png', nextStageAt: 60 }, // 1 hour
+    baby: { img: 'dragon centered/02_v1_baby.png', nextStageAt: 540 }, // +8 hours (9h total)
+    toddler: { img: 'dragon centered/03_v1_toddler.png', nextStageAt: 1500 }, // +16 hours (25h total)
+    child: { img: 'dragon centered/04_v1_child.png', nextStageAt: 2940 }, // +24 hours (49h total)
+    teen: { img: 'dragon centered/05_v1_teen.png', nextStageAt: 5820 }, // +48 hours (97h total)
+    adult: { img: 'dragon centered/06a_v1_good_adult.png', nextStageAt: 10140 }, // +72 hours (169h total)
+    adult_grumpy: { img: 'dragon centered/06b_v1_grumpy_adult.png', nextStageAt: 10140 }, // Variant
+    elder: { img: 'dragon centered/07a_v1_good_elder.png', nextStageAt: 14460 }, // +72 hours (241h total) - Max 3 days per stage
+    elder_grumpy: { img: 'dragon centered/07b_v1_grumpy_elder.png', nextStageAt: 14460 } // Variant
+  },
+}
 
 // DOM Elements
 const dragonImg = document.getElementById('dragon-img')
@@ -37,6 +39,10 @@ const btnSleep = document.getElementById('btn-sleep')
 const btnReset = document.getElementById('btn-reset')
 const statusEmoji = document.getElementById('status-emoji')
 const dragonStage = document.querySelector('.dragon-stage')
+const btnInfo = document.getElementById('info-btn')
+const infoModal = document.getElementById('info-modal')
+const btnCloseInfo = document.getElementById('close-info')
+const evolutionList = document.getElementById('evolution-list')
 
 // Initialize Game
 function init() {
@@ -47,9 +53,37 @@ function init() {
     gameState.nextAgeUpdate = Date.now() + config.dayLength
   }
 
+  syncStageWithAge() // Fix for old saves with new config
   calculateOfflineProgress()
   updateUI()
   startGameLoop()
+}
+
+function syncStageWithAge() {
+  const stages = Object.keys(config.stages)
+  let correctStage = 'egg'
+
+  for (let i = 0; i < stages.length; i++) {
+    const stageName = stages[i]
+    const stageConfig = config.stages[stageName]
+
+    // If we have passed this stage's threshold, check the next one
+    // But wait, nextStageAt is when we LEAVE this stage.
+    // So if age < nextStageAt, we are IN this stage.
+    if (gameState.age < stageConfig.nextStageAt) {
+      correctStage = stageName
+      break
+    }
+    // If we are at the last stage, stay there
+    if (i === stages.length - 1) {
+      correctStage = stageName
+    }
+  }
+
+  if (gameState.stage !== correctStage) {
+    console.log(`Correcting stage from ${gameState.stage} to ${correctStage}`)
+    gameState.stage = correctStage
+  }
 }
 
 // Save/Load System
@@ -79,82 +113,130 @@ function resetGame() {
 
 // Game Logic
 function calculateOfflineProgress() {
-  const now = Date.now()
-  const timeDiff = now - gameState.lastLogin
-
-  // Calculate how many decay cycles passed
-  const cycles = Math.floor(timeDiff / config.decayRate)
-
-  if (cycles > 0 && !gameState.isSleeping) {
-    decreaseStats(cycles)
-    // Cap stats at 0
-    gameState.hunger = Math.max(0, gameState.hunger)
-    gameState.happiness = Math.max(0, gameState.happiness)
-    gameState.energy = Math.max(0, gameState.energy)
-  } else if (gameState.isSleeping) {
-    // Recover energy while sleeping offline
-    const energyGain = cycles * 5
-    gameState.energy = Math.min(100, gameState.energy + energyGain)
-    // Wake up if fully rested
-    if (gameState.energy >= 100) {
-      gameState.isSleeping = false
+    const now = Date.now();
+    const timeDiff = now - gameState.lastLogin;
+    
+    // Calculate how many decay cycles passed
+    const cycles = Math.floor(timeDiff / config.decayRate);
+    
+    // Calculate effective growth time (stops when hunger hits 0)
+    // Hunger decays by 2 per cycle (2000ms)
+    // Cycles until starvation = currentHunger / 2
+    const cyclesToStarve = Math.ceil(gameState.hunger / 2);
+    const timeToStarve = cyclesToStarve * config.decayRate;
+    
+    // If we were sleeping, we don't starve, so we grow full time
+    // If not sleeping, we grow only until we starve
+    let effectiveGrowthTime = timeDiff;
+    if (!gameState.isSleeping) {
+        effectiveGrowthTime = Math.min(timeDiff, timeToStarve);
     }
-  }
-
-  // Age progression offline
-  if (now >= gameState.nextAgeUpdate) {
-    const timePassedSinceNextUpdate = now - gameState.nextAgeUpdate
-    const daysPassed =
-      1 + Math.floor(timePassedSinceNextUpdate / config.dayLength)
-
-    gameState.age += daysPassed
-
-    // Update nextAgeUpdate to be in the future
-    const timeIntoNextDay = timePassedSinceNextUpdate % config.dayLength
-    gameState.nextAgeUpdate = now + (config.dayLength - timeIntoNextDay)
-
-    checkEvolution()
-  }
+    
+    if (cycles > 0 && !gameState.isSleeping) {
+        decreaseStats(cycles);
+        // Cap stats at 0
+        gameState.hunger = Math.max(0, gameState.hunger);
+        gameState.happiness = Math.max(0, gameState.happiness);
+        gameState.energy = Math.max(0, gameState.energy);
+    } else if (gameState.isSleeping) {
+        // Recover energy while sleeping offline
+        const energyGain = cycles * 5;
+        gameState.energy = Math.min(100, gameState.energy + energyGain);
+        // Wake up if fully rested
+        if (gameState.energy >= 100) {
+            gameState.isSleeping = false;
+        }
+    }
+    
+    // Age progression offline
+    // Only advance age if we had effective growth time
+    if (effectiveGrowthTime > 0) {
+        // We need to advance nextAgeUpdate based on effectiveGrowthTime
+        // But nextAgeUpdate is a timestamp in the future.
+        // If we missed it, we age up.
+        
+        // Simpler approach:
+        // Calculate how many minutes passed during effective growth
+        const minutesPassed = Math.floor(effectiveGrowthTime / config.dayLength);
+        
+        if (minutesPassed > 0) {
+            gameState.age += minutesPassed;
+            
+            // Adjust nextAgeUpdate
+            // It should be: now + (time remaining for next minute)
+            // But we need to account for the fact that we might have stopped growing halfway
+            
+            // Let's just reset nextAgeUpdate to be consistent with current time + remainder
+            // This is a bit of a hack but works for "pausing" logic
+            const timeIntoNextDay = effectiveGrowthTime % config.dayLength;
+            gameState.nextAgeUpdate = now + (config.dayLength - timeIntoNextDay);
+            
+            checkEvolution();
+        } else {
+            // If we didn't pass a full minute, we still need to shift nextAgeUpdate
+            // if we were starving part of the time.
+            // Actually, if we starved, we just push nextAgeUpdate forward by the starved time.
+            const starvedTime = Math.max(0, timeDiff - effectiveGrowthTime);
+            gameState.nextAgeUpdate += starvedTime;
+        }
+    } else {
+        // We were starving the whole time (or hunger was 0)
+        // Push nextAgeUpdate forward by the entire duration to "pause" it
+        gameState.nextAgeUpdate += timeDiff;
+    }
 }
 
 function startGameLoop() {
-  // Stat decay loop
-  setInterval(() => {
-    if (!gameState.isSleeping) {
-      decreaseStats(1)
-    } else {
-      gameState.energy = Math.min(100, gameState.energy + 5)
-      if (gameState.energy >= 100) {
-        wakeUp()
-      }
-    }
-    updateUI()
-    saveGame()
-  }, config.decayRate)
+    // Stat decay loop
+    setInterval(() => {
+        if (!gameState.isSleeping) {
+            decreaseStats(1);
+        } else {
+            gameState.energy = Math.min(100, gameState.energy + 5);
+            if (gameState.energy >= 100) {
+                wakeUp();
+            }
+        }
+        updateUI();
+        saveGame();
+    }, config.decayRate);
 
-  // Aging and Countdown loop (1 second tick)
-  setInterval(() => {
-    const now = Date.now()
-    if (now >= gameState.nextAgeUpdate) {
-      gameState.age++
-      gameState.nextAgeUpdate += config.dayLength
-      checkEvolution()
-      updateUI()
-    }
-    updateCountdown()
-  }, 1000)
-
-  // Initial countdown update
-  updateCountdown()
+    // Aging and Countdown loop (1 second tick)
+    setInterval(() => {
+        const now = Date.now();
+        
+        // Only age if not starving (hunger > 0)
+        if (gameState.hunger > 0) {
+            if (now >= gameState.nextAgeUpdate) {
+                gameState.age++;
+                gameState.nextAgeUpdate += config.dayLength;
+                checkEvolution();
+                updateUI();
+            }
+        } else {
+            // If starving, push the next update time forward so it doesn't get closer
+            // Effectively pausing the countdown
+            gameState.nextAgeUpdate += 1000;
+        }
+        
+        updateCountdown();
+    }, 1000);
+    
+    // Initial countdown update
+    updateCountdown();
 }
 
 function updateCountdown() {
-  const currentStageConfig = config.stages[gameState.stage]
-  if (!currentStageConfig) {
+  const stages = Object.keys(config.stages)
+  const currentIndex = stages.indexOf(gameState.stage)
+
+  // If it's the last stage or invalid
+  if (currentIndex === -1 || currentIndex === stages.length - 1) {
     countdownDisplay.textContent = 'Max Level'
     return
   }
 
+  const currentStageConfig = config.stages[gameState.stage]
   const targetAge = currentStageConfig.nextStageAt
   const daysLeft = targetAge - gameState.age
 
@@ -178,10 +260,15 @@ function updateCountdown() {
 
   // Format time
   const totalSeconds = Math.floor(totalMs / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
+
+  const days = Math.floor(totalSeconds / (3600 * 24))
+  const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
 
-  const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds
+  const formattedTime = `${days} days ${hours
+    .toString()
+    .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
     .toString()
     .padStart(2, '0')}`
   countdownDisplay.textContent = `Next: ${formattedTime}`
@@ -199,16 +286,48 @@ function decreaseStats(multiplier) {
 }
 
 function checkEvolution() {
-  const currentStageConfig = config.stages[gameState.stage]
-  if (currentStageConfig && gameState.age >= currentStageConfig.nextStageAt) {
-    // Find next stage
-    const stages = Object.keys(config.stages)
-    const currentIndex = stages.indexOf(gameState.stage)
-    if (currentIndex < stages.length - 1) {
-      const nextStage = stages[currentIndex + 1]
-      evolve(nextStage)
+    const currentStageConfig = config.stages[gameState.stage];
+    if (currentStageConfig && gameState.age >= currentStageConfig.nextStageAt) {
+        // Branching Logic
+        let nextStage = null;
+        
+        if (gameState.stage === 'teen') {
+            // Teen -> Adult (Good or Grumpy)
+            if (gameState.happiness < 50) {
+                nextStage = 'adult_grumpy';
+            } else {
+                nextStage = 'adult';
+            }
+        } else if (gameState.stage === 'adult' || gameState.stage === 'adult_grumpy') {
+            // Adult -> Elder (Good or Grumpy)
+            if (gameState.happiness < 50) {
+                nextStage = 'elder_grumpy';
+            } else {
+                nextStage = 'elder';
+            }
+        } else {
+            // Linear progression for others
+            const stages = Object.keys(config.stages);
+            const currentIndex = stages.indexOf(gameState.stage);
+            // We need to be careful because we added variants to the keys
+            // The linear order in config.stages is: egg, baby, toddler, child, teen, adult, adult_grumpy, elder, elder_grumpy
+            // This order is not strictly linear anymore.
+            
+            // Hardcoded linear map for early stages
+            const linearMap = {
+                'egg': 'baby',
+                'baby': 'toddler',
+                'toddler': 'child',
+                'child': 'teen'
+            };
+            
+            nextStage = linearMap[gameState.stage];
+        }
+        
+        if (nextStage) {
+            evolve(nextStage);
+        }
     }
-  }
 }
 
 function evolve(newStage) {
@@ -226,6 +345,7 @@ function pet() {
   animateDragon('bounce')
   showEmoji('❤️')
   showFloatingText(dragonImg, '+5 Happy', '#FF6584')
+  playSound('pet')
   updateUI()
 }
 
@@ -241,6 +361,7 @@ function feed() {
   animateDragon('bounce')
   showEmoji('😋')
   showFloatingText(hungerBar, '+20 Hunger', '#43D9AD')
+  playSound('feed')
   updateUI()
 }
 
@@ -258,6 +379,7 @@ function play() {
   showEmoji('😂')
   showFloatingText(happinessBar, '+15 Happy', '#FF6584')
   showFloatingText(energyBar, '-15 Energy', '#6C63FF')
+  playSound('play')
   updateUI()
 }
 
@@ -275,6 +397,7 @@ function goToSleep() {
   showEmoji('💤')
   dragonImg.classList.add('sleeping')
   btnSleep.innerHTML = '<span class="icon">☀️</span> Wake'
+  playSound('sleep')
 }
 
 function wakeUp() {
@@ -282,6 +405,66 @@ function wakeUp() {
   showEmoji('😊')
   dragonImg.classList.remove('sleeping')
   btnSleep.innerHTML = '<span class="icon">💤</span> Sleep'
+  playSound('wake')
+}
+
+// Info Modal Logic
+function toggleInfoModal() {
+  if (infoModal.classList.contains('hidden')) {
+    populateEvolutionList()
+    infoModal.classList.remove('hidden')
+    playSound('click')
+  } else {
+    infoModal.classList.add('hidden')
+    playSound('click')
+  }
+}
+
+function populateEvolutionList() {
+  evolutionList.innerHTML = ''
+  const stages = Object.keys(config.stages)
+
+  stages.forEach((stage, index) => {
+    const stageConfig = config.stages[stage]
+    const li = document.createElement('li')
+
+    const nameSpan = document.createElement('span')
+    nameSpan.className = 'stage-name'
+    nameSpan.textContent = stage
+
+    const timeSpan = document.createElement('span')
+    timeSpan.className = 'stage-time'
+
+    if (index === 0) {
+      timeSpan.textContent = 'Start'
+    } else {
+      // Calculate duration from previous stage
+      const prevStageConfig = config.stages[stages[index - 1]]
+      // Actually nextStageAt is cumulative age.
+      // So the time to reach this stage is the previous stage's nextStageAt
+
+      // Wait, config.stages[stage].nextStageAt is when you LEAVE this stage.
+      // So you ENTER this stage when you leave the previous one.
+
+      // Let's show "Unlocks at: X time"
+      const unlockTime =
+        index === 0 ? 0 : config.stages[stages[index - 1]].nextStageAt
+      timeSpan.textContent = formatAge(unlockTime)
+    }
+
+    // Highlight current stage
+    if (stage === gameState.stage) {
+      li.style.backgroundColor = '#f1f3f5'
+      li.style.borderRadius = '5px'
+      li.style.padding = '8px 10px'
+      nameSpan.textContent += ' (Current)'
+      nameSpan.style.color = 'var(--primary-color)'
+    }
+
+    li.appendChild(nameSpan)
+    li.appendChild(timeSpan)
+    evolutionList.appendChild(li)
+  })
 }
 
 // UI Updates
@@ -402,12 +585,143 @@ function showNotification(msg) {
   setTimeout(() => toast.remove(), 2000)
 }
 
+// Sound System
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+
+function playSound(type) {
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume()
+  }
+
+  const osc = audioCtx.createOscillator()
+  const gainNode = audioCtx.createGain()
+
+  osc.connect(gainNode)
+  gainNode.connect(audioCtx.destination)
+
+  const now = audioCtx.currentTime
+
+  switch (type) {
+    case 'feed':
+      // Happy ascending chirp
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(400, now)
+      osc.frequency.linearRampToValueAtTime(600, now + 0.1)
+      osc.frequency.linearRampToValueAtTime(1000, now + 0.2)
+      gainNode.gain.setValueAtTime(0.1, now)
+      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.1)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
+      osc.start(now)
+      osc.stop(now + 0.3)
+      break
+
+    case 'play':
+      // Playful bounce
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(300, now)
+      osc.frequency.linearRampToValueAtTime(500, now + 0.1)
+      osc.frequency.linearRampToValueAtTime(300, now + 0.2)
+      osc.frequency.linearRampToValueAtTime(500, now + 0.3)
+      gainNode.gain.setValueAtTime(0.1, now)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4)
+      osc.start(now)
+      osc.stop(now + 0.4)
+      break
+
+    case 'sleep':
+      // Lullaby drop
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(400, now)
+      osc.frequency.exponentialRampToValueAtTime(100, now + 1)
+      gainNode.gain.setValueAtTime(0.1, now)
+      gainNode.gain.linearRampToValueAtTime(0, now + 1)
+      osc.start(now)
+      osc.stop(now + 1)
+      break
+
+    case 'wake':
+      // Gentle rise
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(100, now)
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.5)
+      gainNode.gain.setValueAtTime(0, now)
+      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.2)
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.5)
+      osc.start(now)
+      osc.stop(now + 0.5)
+      break
+
+    case 'pet':
+      // Purr-like low trill
+      osc.type = 'square'
+      osc.frequency.setValueAtTime(100, now)
+      // Create a wobble effect
+      const lfo = audioCtx.createOscillator()
+      lfo.type = 'sine'
+      lfo.frequency.value = 20
+      const lfoGain = audioCtx.createGain()
+      lfoGain.gain.value = 50
+      lfo.connect(lfoGain)
+      lfoGain.connect(osc.frequency)
+      lfo.start(now)
+      lfo.stop(now + 0.5)
+
+      gainNode.gain.setValueAtTime(0.05, now)
+      gainNode.gain.linearRampToValueAtTime(0, now + 0.5)
+      osc.start(now)
+      osc.stop(now + 0.5)
+      break
+
+    case 'evolve':
+      // Fanfare
+      const frequencies = [440, 554, 659, 880] // A major
+      frequencies.forEach((freq, i) => {
+        const osc2 = audioCtx.createOscillator()
+        const gain2 = audioCtx.createGain()
+        osc2.connect(gain2)
+        gain2.connect(audioCtx.destination)
+
+        osc2.type = 'triangle'
+        osc2.frequency.value = freq
+
+        const startTime = now + i * 0.1
+        gain2.gain.setValueAtTime(0, startTime)
+        gain2.gain.linearRampToValueAtTime(0.1, startTime + 0.05)
+        gain2.gain.exponentialRampToValueAtTime(0.01, startTime + 1)
+
+        osc2.start(startTime)
+        osc2.stop(startTime + 1)
+      })
+      break
+
+    case 'click':
+    default:
+      // Simple blip
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(800, now)
+      osc.frequency.exponentialRampToValueAtTime(300, now + 0.1)
+      gainNode.gain.setValueAtTime(0.05, now)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1)
+      osc.start(now)
+      osc.stop(now + 0.1)
+      break
+  }
+}
+
 // Event Listeners
 btnFeed.addEventListener('click', feed)
 btnPlay.addEventListener('click', play)
 btnSleep.addEventListener('click', toggleSleep)
 btnReset.addEventListener('click', resetGame)
 dragonImg.addEventListener('click', pet)
+btnInfo.addEventListener('click', toggleInfoModal)
+btnCloseInfo.addEventListener('click', toggleInfoModal)
+// Close modal when clicking outside
+infoModal.addEventListener('click', (e) => {
+  if (e.target === infoModal) {
+    toggleInfoModal()
+  }
+})
 
 // Start
 init()
