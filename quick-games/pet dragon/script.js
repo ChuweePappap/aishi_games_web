@@ -74,7 +74,10 @@ const config = {
         idle: { folder: 'dragon centered/adult-bad/adult bad idle', frames: 6 },
         play: { folder: 'dragon centered/adult-bad/adult bad play', frames: 6 },
         eat: { folder: 'dragon centered/adult-bad/adult bad eat', frames: 6 },
-        sleep: { folder: 'dragon centered/adult-bad/adult bad sleep', frames: 6 },
+        sleep: {
+          folder: 'dragon centered/adult-bad/adult bad sleep',
+          frames: 6,
+        },
       },
       nextStageAt: 10140,
     }, // Variant
