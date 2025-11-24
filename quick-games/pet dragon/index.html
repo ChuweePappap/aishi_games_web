@@ -159,6 +159,33 @@
         </div>
       </div>
 
+      <!-- Death Modal -->
+      <div id="death-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 style="color: #ff6b6b">Your Dragon Passed Away</h3>
+          </div>
+          <div class="guide-section" style="text-align: center">
+            <p id="death-reason">
+              Your dragon ran out of energy and couldn't recover.
+            </p>
+            <div style="font-size: 3rem; margin: 20px 0">🪦</div>
+            <button
+              id="btn-restart-death"
+              class="action-btn"
+              style="
+                border-color: #ff6b6b;
+                color: #ff6b6b;
+                width: 100%;
+                font-weight: 900;
+              "
+            >
+              Start New Game
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="dragon-stage">
         <div class="dragon-container">
           <img
@@ -173,6 +200,7 @@
           ></video>
           <div id="dragon-sprite" class="dragon-sprite hidden"></div>
           <div id="status-emoji" class="status-emoji"></div>
+          <div id="speech-bubble" class="speech-bubble hidden"></div>
         </div>
       </div>
       <button id="btn-evolve" class="evolve-btn hidden">✨ Evolve! ✨</button>
@@ -204,6 +232,9 @@
         </button>
         <button id="btn-play" class="action-btn">
           <span class="icon">🎾</span> Play
+        </button>
+        <button id="btn-scold" class="action-btn">
+          <span class="icon">😠</span> Scold
         </button>
         <button id="btn-sleep" class="action-btn">
           <span class="icon">💤</span> Sleep

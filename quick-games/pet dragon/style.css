@@ -117,9 +117,11 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: radial-gradient(circle, #f8f9fa 0%, #e9ecef 100%);
+  background: url('dragon centered/BG/BG_Day.png') no-repeat center center;
+  background-size: cover;
   border-radius: var(--radius);
   position: relative;
+  transition: background-image 0.5s ease;
 }
 
 .dragon-container {
@@ -133,14 +135,18 @@ h1 {
 }
 
 #dragon-img {
-  max-width: 150%;
-  max-height: 150%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   transition: transform 0.3s ease;
   filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.1));
   cursor: pointer;
   margin: 0 auto; /* Force centering if it's block-level */
   display: block; /* Ensure margin auto works */
+
+  position: relative;
+  top: 20px; /* Positive moves DOWN, Negative moves UP */
+  left: 30px;  /
 }
 
 #dragon-img:active {
@@ -173,7 +179,7 @@ h1 {
 }
 
 .dragon-stage.night-mode {
-  background: radial-gradient(circle, #2c3e50 0%, #000000 100%);
+  background-image: url('dragon centered/BG/BG_Night.png');
 }
 
 .floating-text {
@@ -522,13 +528,17 @@ h1 {
 
 /* Sprite Animation */
 .dragon-sprite {
-  width: 200px;
-  height: 200px;
+  width: 100px;
+  height: 100px;
   background-repeat: no-repeat;
   background-size: 600% 400%; /* 6 cols, 4 rows */
   /* image-rendering: pixelated; Removed for smoother look */
   margin: 0 auto;
   display: block;
+
+  position: relative;
+  top: 20px; /* Positive moves DOWN, Negative moves UP */
+  left: 30px;  /* Positive moves RIGHT, Negative moves LEFT */
 }
 
 .dragon-sprite.hidden {
@@ -581,4 +591,31 @@ h1 {
     border-radius: 0;
     box-shadow: none;
   }
+}
+
+.speech-bubble {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 15px;
+  border-bottom-left-radius: 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  font-weight: bold;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  z-index: 10;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-left: 10px solid white;
+  border-bottom: 10px solid transparent;
 }

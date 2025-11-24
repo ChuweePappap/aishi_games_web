@@ -9,6 +9,8 @@ const gameState = {
   birthTime: Date.now(),
   nextAgeUpdate: Date.now() + 60000, // Will be overwritten by config.dayLength if loaded
   petName: null,
+  zeroEnergyStartTime: null,
+  scoldCount: 0,
 }
 
 let isResetting = false
@@ -81,7 +83,25 @@ const config = {
       },
       nextStageAt: 10140,
     }, // Variant
-    elder: { img: 'dragon centered/07a_v1_good_elder.png', nextStageAt: 14460 }, // +72 hours (241h total) - Max 3 days per stage
+    elder: {
+      img: 'dragon centered/07a_v1_good_elder.png',
+      animations: {
+        idle: {
+          folder: 'dragon centered/elder-good/elder good idle',
+          frames: 6,
+        },
+        play: {
+          folder: 'dragon centered/elder-good/elder good play',
+          frames: 6,
+        },
+        eat: { folder: 'dragon centered/elder-good/elder good eat', frames: 6 },
+        sleep: {
+          folder: 'dragon centered/elder-good/elder good sleep',
+          frames: 6,
+        },
+      },
+      nextStageAt: 14460,
+    }, // +72 hours (241h total) - Max 3 days per stage
     elder_grumpy: {
       img: 'dragon centered/07b_v1_grumpy_elder.png',
       nextStageAt: 14460,
@@ -122,6 +142,7 @@ const happinessBar = document.getElementById('happiness-bar')
 const energyBar = document.getElementById('energy-bar')
 const btnFeed = document.getElementById('btn-feed')
 const btnPlay = document.getElementById('btn-play')
+const btnScold = document.getElementById('btn-scold')
 const btnSleep = document.getElementById('btn-sleep')
 const btnReset = document.getElementById('btn-reset')
 const statusEmoji = document.getElementById('status-emoji')
@@ -376,6 +397,7 @@ function startGameLoop() {
         wakeUp()
       }
     }
+    checkDeathCondition()
     updateUI()
     saveGame()
   }, config.decayRate)
@@ -551,6 +573,8 @@ function pet() {
   if (gameState.isSleeping) return
 
   gameState.happiness = Math.min(100, gameState.happiness + 5)
+  // Reset scold count when treated nicely
+  if (gameState.scoldCount > 0) gameState.scoldCount = 0
 
   // Animation
   if (
@@ -573,7 +597,7 @@ function pet() {
 function feed() {
   if (gameState.isSleeping) return
   if (gameState.hunger >= 100) {
-    showNotification("I'm full!")
+    showSpeechBubble("I'm full!")
     return
   }
 
@@ -601,7 +625,7 @@ function feed() {
 function play() {
   if (gameState.isSleeping) return
   if (gameState.energy < 20) {
-    showNotification("I'm too tired...")
+    showSpeechBubble("I'm too tired...")
     return
   }
 
@@ -625,6 +649,42 @@ function play() {
   showFloatingText(happinessBar, '+15 Happy', '#FF6584')
   showFloatingText(energyBar, '-15 Energy', '#6C63FF')
   playSound('play')
+  updateUI()
+}
+
+function scold() {
+  if (gameState.isSleeping) return
+
+  // Check if happiness is already 0
+  if (gameState.happiness <= 0) {
+    triggerDeath('sadness')
+    return
+  }
+
+  gameState.happiness = Math.max(0, gameState.happiness - 20)
+  gameState.scoldCount = (gameState.scoldCount || 0) + 1
+
+  // Animation
+  animateDragon('shake')
+
+  showEmoji('😢')
+
+  // Progressive responses
+  let response = 'Sorry...'
+  if (gameState.scoldCount > 2 && gameState.scoldCount <= 4) {
+    response = "I'll be good..."
+  } else if (gameState.scoldCount > 4 && gameState.scoldCount <= 6) {
+    response = 'Why are you mad?'
+  } else if (gameState.scoldCount > 6 && gameState.scoldCount <= 8) {
+    response = 'Please stop...'
+  } else if (gameState.scoldCount > 8) {
+    const sadResponses = ["I'm sad...", '*Sob*', 'Do you hate me?', '...']
+    response = sadResponses[Math.floor(Math.random() * sadResponses.length)]
+  }
+
+  showSpeechBubble(response)
+  showFloatingText(happinessBar, '-20 Happy', '#FF6584')
+  playSound('scold')
   updateUI()
 }
 
@@ -962,6 +1022,19 @@ function showEmoji(emoji) {
   }, 2000)
 }
 
+function showSpeechBubble(text) {
+  const bubble = document.getElementById('speech-bubble')
+  bubble.textContent = text
+  bubble.classList.remove('hidden')
+
+  // Clear any existing timeout to prevent early hiding
+  if (bubble.timeoutId) clearTimeout(bubble.timeoutId)
+
+  bubble.timeoutId = setTimeout(() => {
+    bubble.classList.add('hidden')
+  }, 2000)
+}
+
 function showNotification(msg) {
   // Simple alert for now, could be a toast
   // alert(msg);
@@ -1022,6 +1095,17 @@ function playSound(type) {
       gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4)
       osc.start(now)
       osc.stop(now + 0.4)
+      break
+
+    case 'scold':
+      // Discordant sound
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(150, now)
+      osc.frequency.linearRampToValueAtTime(100, now + 0.3)
+      gainNode.gain.setValueAtTime(0.1, now)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
+      osc.start(now)
+      osc.stop(now + 0.3)
       break
 
     case 'sleep':
@@ -1107,6 +1191,7 @@ function playSound(type) {
 // Event Listeners
 btnFeed.addEventListener('click', feed)
 btnPlay.addEventListener('click', play)
+btnScold.addEventListener('click', scold)
 btnSleep.addEventListener('click', toggleSleep)
 btnReset.addEventListener('click', resetGame)
 dragonImg.addEventListener('click', pet)
@@ -1129,6 +1214,10 @@ resetModal.addEventListener('click', (e) => {
   }
 })
 
+document
+  .getElementById('btn-restart-death')
+  .addEventListener('click', confirmReset)
+
 btnEvolve.addEventListener('click', triggerEvolution)
 
 btnConfirmName.addEventListener('click', () => {
@@ -1150,3 +1239,41 @@ btnConfirmName.addEventListener('click', () => {
 
 // Start
 init()
+
+function checkDeathCondition() {
+  if (gameState.energy <= 0) {
+    if (!gameState.zeroEnergyStartTime) {
+      gameState.zeroEnergyStartTime = Date.now()
+    } else {
+      const duration = Date.now() - gameState.zeroEnergyStartTime
+      // Check DEV mode for threshold
+      const isDev = typeof window.ENV !== 'undefined' && window.ENV.DEV === true
+      const threshold = isDev ? 60000 : 24 * 60 * 60 * 1000 // 1 min vs 24 hours
+
+      if (duration > threshold) {
+        triggerDeath('energy')
+      }
+    }
+  } else {
+    gameState.zeroEnergyStartTime = null
+  }
+}
+
+function triggerDeath(reason) {
+  clearInterval(gameLoopInterval)
+  clearInterval(ageLoopInterval)
+  if (animationInterval) clearInterval(animationInterval)
+
+  const deathModal = document.getElementById('death-modal')
+  const deathReason = document.getElementById('death-reason')
+
+  if (reason === 'sadness') {
+    deathReason.textContent = 'Your dragon died of a broken heart...'
+  } else {
+    deathReason.textContent =
+      "Your dragon ran out of energy and couldn't recover."
+  }
+
+  deathModal.classList.remove('hidden')
+  playSound('scold') // Use sad sound
+}
