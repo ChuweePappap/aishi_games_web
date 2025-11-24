@@ -945,12 +945,18 @@ function setSpriteAnimation(action, loopCount = 0, onComplete = null) {
 
     // Reset CSS styles that might interfere
     dragonSprite.className = 'dragon-sprite'
-    dragonSprite.style.backgroundImage = ''
+    // Don't clear backgroundImage here to avoid white flash
+    // dragonSprite.style.backgroundImage = '' 
 
     let frame = 1
     let loops = 0
 
     const playFrame = () => {
+      // Preload next frame to reduce flicker
+      const nextFrame = frame + 1 > animData.frames ? 1 : frame + 1
+      const nextImg = new Image()
+      nextImg.src = `${animData.folder}/${nextFrame}.png`
+
       dragonSprite.style.backgroundImage = `url('${animData.folder}/${frame}.png')`
       dragonSprite.style.backgroundSize = 'contain'
       dragonSprite.style.backgroundPosition = 'center'
