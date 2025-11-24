@@ -38,7 +38,16 @@ const config = {
       },
       nextStageAt: 540,
     }, // +8 hours (9h total)
-    toddler: { img: 'dragon centered/03_v1_toddler.png', nextStageAt: 1500 }, // +16 hours (25h total)
+    toddler: {
+      img: 'dragon centered/03_v1_toddler.png',
+      animations: {
+        idle: { folder: 'dragon centered/toddler/toddler idle', frames: 6 },
+        play: { folder: 'dragon centered/toddler/toddler play', frames: 6 },
+        eat: { folder: 'dragon centered/toddler/toddler  eat', frames: 6 },
+        sleep: { folder: 'dragon centered/toddler/toddler sleep', frames: 6 },
+      },
+      nextStageAt: 1500,
+    }, // +16 hours (25h total)
     child: { img: 'dragon centered/04_v1_child.png', nextStageAt: 2940 }, // +24 hours (49h total)
     teen: { img: 'dragon centered/05_v1_teen.png', nextStageAt: 5820 }, // +48 hours (97h total)
     adult: { img: 'dragon centered/06a_v1_good_adult.png', nextStageAt: 10140 }, // +72 hours (169h total)
