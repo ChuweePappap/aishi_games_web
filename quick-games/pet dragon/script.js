@@ -8,6 +8,7 @@ const gameState = {
   isSleeping: false,
   birthTime: Date.now(),
   nextAgeUpdate: Date.now() + 60000, // Will be overwritten by config.dayLength if loaded
+  petName: null,
 }
 
 let isResetting = false
@@ -96,10 +97,22 @@ const infoModal = document.getElementById('info-modal')
 const btnCloseInfo = document.getElementById('close-info')
 const evolutionList = document.getElementById('evolution-list')
 const btnEvolve = document.getElementById('btn-evolve')
+const nameModal = document.getElementById('name-modal')
+const petNameInput = document.getElementById('pet-name-input')
+const btnConfirmName = document.getElementById('btn-confirm-name')
+const petNameLabel = document.getElementById('pet-name-label')
+const stageNameDisplay = document.getElementById('stage-name')
 
 // Initialize Game
 function init() {
   loadGame()
+
+  // Check for name
+  if (!gameState.petName) {
+    nameModal.classList.remove('hidden')
+  } else {
+    petNameLabel.textContent = gameState.petName
+  }
 
   // Ensure nextAgeUpdate exists (for old saves)
   if (!gameState.nextAgeUpdate) {
@@ -667,6 +680,13 @@ function updateUI() {
   // Update Age
   ageDisplay.textContent = formatAge(gameState.age)
 
+  // Update Stage Name
+  if (stageNameDisplay) {
+    stageNameDisplay.textContent = gameState.stage
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (l) => l.toUpperCase())
+  }
+
   // Update Image or Sprite
   const stageConfig = config.stages[gameState.stage]
 
@@ -1015,6 +1035,23 @@ infoModal.addEventListener('click', (e) => {
 })
 
 btnEvolve.addEventListener('click', triggerEvolution)
+
+btnConfirmName.addEventListener('click', () => {
+  const name = petNameInput.value.trim()
+  if (name) {
+    gameState.petName = name
+    petNameLabel.textContent = name
+    nameModal.classList.add('hidden')
+    saveGame()
+    playSound('click')
+  } else {
+    // Shake input or show error
+    petNameInput.style.borderColor = 'red'
+    setTimeout(() => {
+      petNameInput.style.borderColor = '#eee'
+    }, 500)
+  }
+})
 
 // Start
 init()

@@ -60,6 +60,13 @@ h1 {
   color: var(--primary-color);
 }
 
+.pet-name-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-top: -2px;
+}
+
 .age-display {
   font-weight: 700;
   color: var(--text-light);

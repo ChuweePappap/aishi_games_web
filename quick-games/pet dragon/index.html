@@ -15,15 +15,69 @@
   <body>
     <div class="game-container">
       <header>
-        <h1>Dragon Pet</h1>
+        <div>
+          <h1>Dragon Pet</h1>
+          <div id="pet-name-label" class="pet-name-label"></div>
+        </div>
         <div class="header-info">
           <div class="age-display">Age: <span id="age">0m</span></div>
+          <div
+            class="stage-display"
+            style="
+              font-size: 0.8rem;
+              color: #636e72;
+              font-weight: 700;
+              margin-bottom: 2px;
+            "
+          >
+            Stage: <span id="stage-name">Egg</span>
+          </div>
           <div class="countdown-wrapper">
             <div id="evolution-countdown" class="countdown">Next: --:--</div>
             <button id="info-btn" class="info-btn">i</button>
           </div>
         </div>
       </header>
+
+      <!-- Name Modal -->
+      <div id="name-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Name Your Dragon</h3>
+          </div>
+          <div class="guide-section" style="text-align: center">
+            <p>Give your new friend a name!</p>
+            <input
+              type="text"
+              id="pet-name-input"
+              placeholder="Enter name..."
+              maxlength="12"
+              style="
+                padding: 10px;
+                border-radius: 10px;
+                border: 2px solid #eee;
+                width: 100%;
+                margin-bottom: 15px;
+                font-family: inherit;
+                font-size: 1rem;
+                text-align: center;
+              "
+            />
+            <button
+              id="btn-confirm-name"
+              class="evolve-btn"
+              style="
+                position: static;
+                transform: none;
+                width: 100%;
+                box-shadow: none;
+              "
+            >
+              Start Journey
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Info Modal -->
       <div id="info-modal" class="modal hidden">

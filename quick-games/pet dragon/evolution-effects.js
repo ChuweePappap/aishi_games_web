@@ -39,9 +39,13 @@ function playEvolutionEffect(fromStage, toStage) {
       // Cleanup when done
       videoEl.onended = () => {
         videoEl.classList.add('hidden')
-        if (dragonImg) dragonImg.classList.remove('hidden')
         // Ensure we clear the source to stop buffering/memory usage
         videoEl.src = ''
+
+        // Refresh UI to show the correct sprite/image for the new stage
+        if (typeof updateUI === 'function') {
+          updateUI()
+        }
       }
     }
   } else if (toStage === 'adult_grumpy') {
