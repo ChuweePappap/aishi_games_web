@@ -565,6 +565,10 @@ function evolve(newStage) {
   currentAnimAction = null
   if (animationInterval) clearInterval(animationInterval)
 
+  // Reset nextAgeUpdate to ensure a full cycle passes before next age increment
+  // This prevents "double evolution" or immediate readiness if the timer was lagging
+  gameState.nextAgeUpdate = Date.now() + config.dayLength
+
   updateUI()
 }
 
