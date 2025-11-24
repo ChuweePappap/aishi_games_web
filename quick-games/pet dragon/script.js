@@ -19,7 +19,7 @@ const config = {
   decayAmount: {
     hunger: 0.14, // Lasts ~1 hour (100 / 0.14 * 5s = 3571s)
     happiness: 0.07, // Lasts ~2 hours
-    energy: 0.07 // Lasts ~2 hours
+    energy: 0.07, // Lasts ~2 hours
   },
   dayLength: 60000, // ms for a game day (1 minute = 1 day for fast progression demo)
   stages: {
