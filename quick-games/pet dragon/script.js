@@ -444,7 +444,7 @@ function evolve(newStage) {
   // Force animation reset for new stage
   currentAnimAction = null
   if (animationInterval) clearInterval(animationInterval)
-  
+
   updateUI()
 }
 
@@ -762,17 +762,17 @@ function setSpriteAnimation(action, loopCount = 0, onComplete = null) {
 
     let frame = 1
     let loops = 0
-    
+
     const playFrame = () => {
       dragonSprite.style.backgroundImage = `url('${animData.folder}/${frame}.png')`
       dragonSprite.style.backgroundSize = 'contain'
       dragonSprite.style.backgroundPosition = 'center'
       frame++
-      
+
       if (frame > animData.frames) {
         frame = 1
         loops++
-        
+
         if (loopCount > 0 && loops >= loopCount) {
           clearInterval(animationInterval)
           if (onComplete) onComplete()
