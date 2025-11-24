@@ -499,6 +499,55 @@ h1 {
   display: none !important;
 }
 
+/* Sprite Animation */
+.dragon-sprite {
+  width: 200px;
+  height: 200px;
+  background-repeat: no-repeat;
+  background-size: 600% 400%; /* 6 cols, 4 rows */
+  image-rendering: pixelated;
+  margin: 0 auto;
+  display: block;
+}
+
+.dragon-sprite.hidden {
+  display: none !important;
+}
+
+/* Animation States */
+.anim-idle {
+  --bg-y: 0%;
+  background-position: 0px var(--bg-y);
+  animation: sprite-play 1s steps(6) infinite;
+}
+
+.anim-play {
+  --bg-y: 33.33%;
+  background-position: 0px var(--bg-y);
+  animation: sprite-play 1s steps(6) infinite;
+}
+
+.anim-eat {
+  --bg-y: 66.66%;
+  background-position: 0px var(--bg-y);
+  animation: sprite-play 1s steps(6) infinite;
+}
+
+.anim-sleep {
+  --bg-y: 100%;
+  background-position: 0px var(--bg-y);
+  animation: sprite-play 2s steps(6) infinite;
+}
+
+@keyframes sprite-play {
+  from {
+    background-position: 0px var(--bg-y);
+  }
+  to {
+    background-position: -1200px var(--bg-y);
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   body {

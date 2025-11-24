@@ -13,6 +13,8 @@ const gameState = {
 let isResetting = false
 let gameLoopInterval
 let ageLoopInterval
+let animationInterval = null
+let currentAnimAction = null
 
 const config = {
   decayRate: 5000, // 5 seconds
@@ -24,7 +26,17 @@ const config = {
   dayLength: 60000, // ms for a game day (1 minute = 1 day for fast progression demo)
   stages: {
     egg: { img: 'dragon centered/01_v1_egg.png', nextStageAt: 60 }, // 1 hour
-    baby: { img: 'dragon centered/02_v1_baby.png', nextStageAt: 540 }, // +8 hours (9h total)
+    baby: {
+      img: 'dragon centered/02_v1_baby.png',
+      // spriteSheet: 'dragon centered/baby_sprite.png', // Deprecated
+      animations: {
+        idle: { folder: 'dragon centered/baby/baby idle', frames: 6 },
+        play: { folder: 'dragon centered/baby/baby play', frames: 6 },
+        eat: { folder: 'dragon centered/baby/baby eat', frames: 6 },
+        sleep: { folder: 'dragon centered/baby/baby sleep', frames: 6 },
+      },
+      nextStageAt: 540,
+    }, // +8 hours (9h total)
     toddler: { img: 'dragon centered/03_v1_toddler.png', nextStageAt: 1500 }, // +16 hours (25h total)
     child: { img: 'dragon centered/04_v1_child.png', nextStageAt: 2940 }, // +24 hours (49h total)
     teen: { img: 'dragon centered/05_v1_teen.png', nextStageAt: 5820 }, // +48 hours (97h total)
@@ -67,6 +79,7 @@ if (typeof window.ENV !== 'undefined' && window.ENV.DEV) {
 
 // DOM Elements
 const dragonImg = document.getElementById('dragon-img')
+const dragonSprite = document.getElementById('dragon-sprite')
 const ageDisplay = document.getElementById('age')
 const countdownDisplay = document.getElementById('evolution-countdown')
 const hungerBar = document.getElementById('hunger-bar')
@@ -282,8 +295,8 @@ function startGameLoop() {
           gameState.age >= currentStageConfig.nextStageAt
         ) {
           // Cap reached, do not age further.
-          // Just consume the tick to keep time moving.
-          gameState.nextAgeUpdate += config.dayLength
+          // Reset nextAgeUpdate to prevent backlog accumulation (skipping stages)
+          gameState.nextAgeUpdate = Date.now() + config.dayLength
           checkEvolution() // Ensure button is shown
         } else {
           gameState.age++
@@ -436,7 +449,20 @@ function pet() {
   if (gameState.isSleeping) return
 
   gameState.happiness = Math.min(100, gameState.happiness + 5)
-  animateDragon('bounce')
+
+  // Animation
+  if (
+    config.stages[gameState.stage].spriteSheet ||
+    config.stages[gameState.stage].animations
+  ) {
+    setSpriteAnimation('play') // Use play animation for petting
+    setTimeout(() => {
+      if (!gameState.isSleeping) setSpriteAnimation('idle')
+    }, 1000)
+  } else {
+    animateDragon('bounce')
+  }
+
   showEmoji('❤️')
   showFloatingText(dragonImg, '+5 Happy', '#FF6584')
   playSound('pet')
@@ -452,7 +478,20 @@ function feed() {
 
   gameState.hunger = Math.min(100, gameState.hunger + 20)
   gameState.energy = Math.max(0, gameState.energy - 5) // Digestion takes energy
-  animateDragon('bounce')
+
+  // Animation
+  if (
+    config.stages[gameState.stage].spriteSheet ||
+    config.stages[gameState.stage].animations
+  ) {
+    setSpriteAnimation('eat')
+    setTimeout(() => {
+      if (!gameState.isSleeping) setSpriteAnimation('idle')
+    }, 1000)
+  } else {
+    animateDragon('bounce')
+  }
+
   showEmoji('😋')
   showFloatingText(hungerBar, '+20 Hunger', '#43D9AD')
   playSound('feed')
@@ -469,7 +508,20 @@ function play() {
   gameState.happiness = Math.min(100, gameState.happiness + 15)
   gameState.hunger = Math.max(0, gameState.hunger - 10)
   gameState.energy = Math.max(0, gameState.energy - 15)
-  animateDragon('shake')
+
+  // Animation
+  if (
+    config.stages[gameState.stage].spriteSheet ||
+    config.stages[gameState.stage].animations
+  ) {
+    setSpriteAnimation('play')
+    setTimeout(() => {
+      if (!gameState.isSleeping) setSpriteAnimation('idle')
+    }, 1000)
+  } else {
+    animateDragon('shake')
+  }
+
   showEmoji('😂')
   showFloatingText(happinessBar, '+15 Happy', '#FF6584')
   showFloatingText(energyBar, '-15 Energy', '#6C63FF')
@@ -614,10 +666,48 @@ function updateUI() {
   // Update Age
   ageDisplay.textContent = formatAge(gameState.age)
 
-  // Update Image
+  // Update Image or Sprite
   const stageConfig = config.stages[gameState.stage]
-  if (dragonImg.getAttribute('src') !== stageConfig.img) {
-    dragonImg.src = stageConfig.img
+
+  if (stageConfig.animations) {
+    // Use JS Animation System
+    let action = 'idle'
+    if (gameState.isSleeping) action = 'sleep'
+
+    if (!currentAnimAction) {
+      setSpriteAnimation(action)
+    } else if (gameState.isSleeping && currentAnimAction !== 'sleep') {
+      setSpriteAnimation('sleep')
+    } else if (!gameState.isSleeping && currentAnimAction === 'sleep') {
+      setSpriteAnimation('idle')
+    }
+  } else if (stageConfig.spriteSheet) {
+    // Use Sprite Animation
+    dragonImg.classList.add('hidden')
+    dragonSprite.classList.remove('hidden')
+    dragonSprite.style.backgroundImage = `url('${stageConfig.spriteSheet}')`
+    dragonSprite.style.backgroundSize = ''
+    dragonSprite.style.backgroundPosition = ''
+
+    // Default to idle if no other animation class is present
+    if (!dragonSprite.className.includes('anim-')) {
+      setSpriteAnimation('idle')
+    }
+
+    // Handle Sleep State for Sprite
+    if (gameState.isSleeping) {
+      setSpriteAnimation('sleep')
+    } else if (dragonSprite.classList.contains('anim-sleep')) {
+      setSpriteAnimation('idle')
+    }
+  } else {
+    // Use Static Image
+    dragonSprite.classList.add('hidden')
+    dragonImg.classList.remove('hidden')
+
+    if (dragonImg.getAttribute('src') !== stageConfig.img) {
+      dragonImg.src = stageConfig.img
+    }
   }
 
   // Button states
@@ -637,6 +727,62 @@ function updateUI() {
     else if (gameState.energy < 30) statusEmoji.textContent = '😫'
     else if (gameState.happiness < 30) statusEmoji.textContent = '😢'
   }
+}
+
+function setSpriteAnimation(action) {
+  const stageConfig = config.stages[gameState.stage]
+
+  // New JS Animation System
+  if (stageConfig.animations) {
+    // Fallback to idle if requested animation is missing
+    if (!stageConfig.animations[action]) {
+      if (action !== 'idle' && stageConfig.animations['idle']) {
+        action = 'idle'
+      } else {
+        return // No animation to play
+      }
+    }
+
+    if (currentAnimAction === action) return // Already playing
+
+    currentAnimAction = action
+    const animData = stageConfig.animations[action]
+
+    // Clear existing interval
+    if (animationInterval) clearInterval(animationInterval)
+
+    dragonImg.classList.add('hidden')
+    dragonSprite.classList.remove('hidden')
+
+    // Reset CSS styles that might interfere
+    dragonSprite.className = 'dragon-sprite'
+    dragonSprite.style.backgroundImage = ''
+
+    let frame = 1
+    const playFrame = () => {
+      dragonSprite.style.backgroundImage = `url('${animData.folder}/${frame}.png')`
+      dragonSprite.style.backgroundSize = 'contain'
+      dragonSprite.style.backgroundPosition = 'center'
+      frame++
+      if (frame > animData.frames) frame = 1
+    }
+
+    playFrame()
+    animationInterval = setInterval(playFrame, 200) // 5 FPS
+    return
+  }
+
+  // Old CSS Sprite System
+  // Remove all animation classes
+  dragonSprite.classList.remove(
+    'anim-idle',
+    'anim-play',
+    'anim-eat',
+    'anim-sleep'
+  )
+
+  // Add the requested class
+  dragonSprite.classList.add(`anim-${action}`)
 }
 
 function showFloatingText(element, text, color) {
