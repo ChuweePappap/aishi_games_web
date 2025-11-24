@@ -128,6 +128,7 @@ function init() {
   calculateOfflineProgress()
   checkEvolution() // Check if we are ready to evolve immediately after loading/offline progress
   populateInfoModal()
+  preloadStageImages(gameState.stage)
   updateUI()
   startGameLoop()
 }
@@ -458,211 +459,21 @@ function evolve(newStage) {
   currentAnimAction = null
   if (animationInterval) clearInterval(animationInterval)
 
+  preloadStageImages(newStage)
   updateUI()
 }
 
-// Actions
-function pet() {
-  if (gameState.isSleeping) return
+function preloadStageImages(stageName) {
+  const stageConfig = config.stages[stageName]
+  if (!stageConfig || !stageConfig.animations) return
 
-  gameState.happiness = Math.min(100, gameState.happiness + 5)
-
-  // Animation
-  if (
-    config.stages[gameState.stage].spriteSheet ||
-    config.stages[gameState.stage].animations
-  ) {
-    setSpriteAnimation('play', 3, () => {
-      if (!gameState.isSleeping) setSpriteAnimation('idle')
-    })
-  } else {
-    animateDragon('bounce')
-  }
-
-  showEmoji('❤️')
-  showFloatingText(dragonImg, '+5 Happy', '#FF6584')
-  playSound('pet')
-  updateUI()
-}
-
-function feed() {
-  if (gameState.isSleeping) return
-  if (gameState.hunger >= 100) {
-    showNotification("I'm full!")
-    return
-  }
-
-  gameState.hunger = Math.min(100, gameState.hunger + 20)
-  gameState.energy = Math.max(0, gameState.energy - 5) // Digestion takes energy
-
-  // Animation
-  if (
-    config.stages[gameState.stage].spriteSheet ||
-    config.stages[gameState.stage].animations
-  ) {
-    setSpriteAnimation('eat', 3, () => {
-      if (!gameState.isSleeping) setSpriteAnimation('idle')
-    })
-  } else {
-    animateDragon('bounce')
-  }
-
-  showEmoji('😋')
-  showFloatingText(hungerBar, '+20 Hunger', '#43D9AD')
-  playSound('feed')
-  updateUI()
-}
-
-function play() {
-  if (gameState.isSleeping) return
-  if (gameState.energy < 20) {
-    showNotification("I'm too tired...")
-    return
-  }
-
-  gameState.happiness = Math.min(100, gameState.happiness + 15)
-  gameState.hunger = Math.max(0, gameState.hunger - 10)
-  gameState.energy = Math.max(0, gameState.energy - 15)
-
-  // Animation
-  if (
-    config.stages[gameState.stage].spriteSheet ||
-    config.stages[gameState.stage].animations
-  ) {
-    setSpriteAnimation('play', 3, () => {
-      if (!gameState.isSleeping) setSpriteAnimation('idle')
-    })
-  } else {
-    animateDragon('shake')
-  }
-
-  showEmoji('😂')
-  showFloatingText(happinessBar, '+15 Happy', '#FF6584')
-  showFloatingText(energyBar, '-15 Energy', '#6C63FF')
-  playSound('play')
-  updateUI()
-}
-
-function toggleSleep() {
-  if (gameState.isSleeping) {
-    wakeUp()
-  } else {
-    goToSleep()
-  }
-  updateUI()
-}
-
-function goToSleep() {
-  gameState.isSleeping = true
-  showEmoji('💤')
-  dragonImg.classList.add('sleeping')
-  btnSleep.innerHTML = '<span class="icon">☀️</span> Wake'
-  playSound('sleep')
-}
-
-function wakeUp() {
-  gameState.isSleeping = false
-  showEmoji('😊')
-  dragonImg.classList.remove('sleeping')
-  btnSleep.innerHTML = '<span class="icon">💤</span> Sleep'
-  playSound('wake')
-}
-
-// Info Modal Logic
-function toggleInfoModal() {
-  if (infoModal.classList.contains('hidden')) {
-    populateEvolutionList()
-    infoModal.classList.remove('hidden')
-    playSound('click')
-  } else {
-    infoModal.classList.add('hidden')
-    playSound('click')
-  }
-}
-
-function populateEvolutionList() {
-  evolutionList.innerHTML = ''
-  const stages = Object.keys(config.stages)
-
-  stages.forEach((stage, index) => {
-    const stageConfig = config.stages[stage]
-    const li = document.createElement('li')
-
-    const nameSpan = document.createElement('span')
-    nameSpan.className = 'stage-name'
-    nameSpan.textContent = stage
-
-    const timeSpan = document.createElement('span')
-    timeSpan.className = 'stage-time'
-
-    if (index === 0) {
-      timeSpan.textContent = 'Start'
-    } else {
-      // Calculate duration from previous stage
-      const prevStageConfig = config.stages[stages[index - 1]]
-      // Actually nextStageAt is cumulative age.
-      // So the time to reach this stage is the previous stage's nextStageAt
-
-      // Wait, config.stages[stage].nextStageAt is when you LEAVE this stage.
-      // So you ENTER this stage when you leave the previous one.
-
-      // Let's show "Unlocks at: X time"
-      const unlockTime =
-        index === 0 ? 0 : config.stages[stages[index - 1]].nextStageAt
-      timeSpan.textContent = formatAge(unlockTime)
+  console.log(`Preloading images for ${stageName}...`)
+  Object.values(stageConfig.animations).forEach((anim) => {
+    for (let i = 1; i <= anim.frames; i++) {
+      const img = new Image()
+      img.src = `${anim.folder}/${i}.png`
     }
-
-    // Highlight current stage
-    if (stage === gameState.stage) {
-      li.style.backgroundColor = '#f1f3f5'
-      li.style.borderRadius = '5px'
-      li.style.padding = '8px 10px'
-      nameSpan.textContent += ' (Current)'
-      nameSpan.style.color = 'var(--primary-color)'
-    }
-
-    li.appendChild(nameSpan)
-    li.appendChild(timeSpan)
-    evolutionList.appendChild(li)
   })
-}
-
-function populateInfoModal() {
-  evolutionList.innerHTML = ''
-  const stages = config.stages
-
-  for (const key in stages) {
-    if (key.includes('grumpy')) continue // Skip variants in the main list to keep it clean
-
-    const stageData = stages[key]
-    const li = document.createElement('li')
-
-    const nameSpan = document.createElement('span')
-    nameSpan.className = 'stage-name'
-    nameSpan.textContent = key.charAt(0).toUpperCase() + key.slice(1)
-
-    const timeSpan = document.createElement('span')
-    timeSpan.className = 'stage-time'
-
-    // Format time
-    const minutes = stageData.nextStageAt
-    if (key === 'elder') {
-      timeSpan.textContent = 'Max Level'
-    } else {
-      const hours = Math.floor(minutes / 60)
-      const days = Math.floor(hours / 24)
-      if (days > 0) {
-        const remHours = hours % 24
-        timeSpan.textContent = `Next: ${days}d ${remHours}h`
-      } else {
-        timeSpan.textContent = `Next: ${hours}h`
-      }
-    }
-
-    li.appendChild(nameSpan)
-    li.appendChild(timeSpan)
-    evolutionList.appendChild(li)
-  }
 }
 
 // UI Updates
