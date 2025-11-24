@@ -130,7 +130,9 @@ function syncStageWithAge() {
   // Only correct if the current stage is invalid (not in config)
   // We do NOT want to auto-upgrade (evolve) here, as that should be manual.
   if (!config.stages[gameState.stage]) {
-    console.log(`Invalid stage ${gameState.stage}, resetting to ${correctStage}`)
+    console.log(
+      `Invalid stage ${gameState.stage}, resetting to ${correctStage}`
+    )
     gameState.stage = correctStage
   }
 }
@@ -217,11 +219,14 @@ function calculateOfflineProgress() {
     if (minutesPassed > 0) {
       const currentStageConfig = config.stages[gameState.stage]
       // Check if we would pass the evolution point
-      if (currentStageConfig && (gameState.age + minutesPassed) >= currentStageConfig.nextStageAt) {
-          // Cap age at evolution point
-          gameState.age = currentStageConfig.nextStageAt;
+      if (
+        currentStageConfig &&
+        gameState.age + minutesPassed >= currentStageConfig.nextStageAt
+      ) {
+        // Cap age at evolution point
+        gameState.age = currentStageConfig.nextStageAt
       } else {
-          gameState.age += minutesPassed;
+        gameState.age += minutesPassed
       }
 
       // Adjust nextAgeUpdate
@@ -272,16 +277,19 @@ function startGameLoop() {
       if (now >= gameState.nextAgeUpdate) {
         const currentStageConfig = config.stages[gameState.stage]
         // Check if we are at the cap (ready to evolve)
-        if (currentStageConfig && gameState.age >= currentStageConfig.nextStageAt) {
-             // Cap reached, do not age further.
-             // Just consume the tick to keep time moving.
-             gameState.nextAgeUpdate += config.dayLength
-             checkEvolution() // Ensure button is shown
+        if (
+          currentStageConfig &&
+          gameState.age >= currentStageConfig.nextStageAt
+        ) {
+          // Cap reached, do not age further.
+          // Just consume the tick to keep time moving.
+          gameState.nextAgeUpdate += config.dayLength
+          checkEvolution() // Ensure button is shown
         } else {
-            gameState.age++
-            gameState.nextAgeUpdate += config.dayLength
-            checkEvolution()
-            updateUI()
+          gameState.age++
+          gameState.nextAgeUpdate += config.dayLength
+          checkEvolution()
+          updateUI()
         }
       }
     } else {
