@@ -104,6 +104,24 @@ const config = {
     }, // +72 hours (241h total) - Max 3 days per stage
     elder_grumpy: {
       img: 'dragon centered/07b_v1_grumpy_elder.png',
+      animations: {
+        idle: {
+          folder: 'dragon centered/elder-grumpy/elder grumpy idle',
+          frames: 6,
+        },
+        play: {
+          folder: 'dragon centered/elder-grumpy/elder grumpy play',
+          frames: 6,
+        },
+        eat: {
+          folder: 'dragon centered/elder-grumpy/elder grumpy eat',
+          frames: 6,
+        },
+        sleep: {
+          folder: 'dragon centered/elder-grumpy/elder grumpy sleep',
+          frames: 6,
+        },
+      },
       nextStageAt: 14460,
     }, // Variant
   },
