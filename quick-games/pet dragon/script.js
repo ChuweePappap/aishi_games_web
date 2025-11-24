@@ -1241,6 +1241,18 @@ btnConfirmName.addEventListener('click', () => {
   }
 })
 
+// Splash Screen
+const splashScreen = document.getElementById('splash-screen')
+const startBtn = document.getElementById('start-btn')
+
+if (startBtn) {
+  startBtn.addEventListener('click', () => {
+    splashScreen.classList.add('hidden')
+    // Optional: Play a sound or start background music here
+    playSound('click')
+  })
+}
+
 // Start
 init()
 
