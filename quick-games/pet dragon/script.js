@@ -946,7 +946,7 @@ function setSpriteAnimation(action, loopCount = 0, onComplete = null) {
     // Reset CSS styles that might interfere
     dragonSprite.className = 'dragon-sprite'
     // Don't clear backgroundImage here to avoid white flash
-    // dragonSprite.style.backgroundImage = '' 
+    // dragonSprite.style.backgroundImage = ''
 
     let frame = 1
     let loops = 0
