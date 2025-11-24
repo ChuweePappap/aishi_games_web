@@ -451,10 +451,9 @@ h1 {
 }
 
 .evolve-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  display: block;
+  margin: 0 auto 15px auto;
+  position: relative;
   background: linear-gradient(45deg, #ffd700, #ffa500);
   border: none;
   padding: 10px 20px;
@@ -470,7 +469,7 @@ h1 {
 }
 
 .evolve-btn:hover {
-  transform: translateX(-50%) scale(1.05);
+  transform: scale(1.05);
 }
 
 .evolve-btn.hidden {

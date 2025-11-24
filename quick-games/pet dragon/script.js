@@ -103,6 +103,12 @@ const btnConfirmName = document.getElementById('btn-confirm-name')
 const petNameLabel = document.getElementById('pet-name-label')
 const stageNameDisplay = document.getElementById('stage-name')
 
+// Reset Modal Elements
+const resetModal = document.getElementById('reset-modal')
+const btnCloseReset = document.getElementById('close-reset')
+const btnCancelReset = document.getElementById('btn-cancel-reset')
+const btnConfirmReset = document.getElementById('btn-confirm-reset')
+
 // Initialize Game
 function init() {
   preloadAssets() // Start preloading assets
@@ -180,19 +186,21 @@ function loadGame() {
 }
 
 function resetGame() {
-  if (
-    confirm(
-      'Are you sure you want to reset your dragon? This cannot be undone.'
-    )
-  ) {
-    isResetting = true
-    clearInterval(gameLoopInterval)
-    clearInterval(ageLoopInterval)
-    localStorage.removeItem('dragonPetSave')
-    console.log('Game reset. Reloading...')
-    // Force reload from server to avoid cache issues
-    location.reload(true)
-  }
+  resetModal.classList.remove('hidden')
+}
+
+function confirmReset() {
+  isResetting = true
+  clearInterval(gameLoopInterval)
+  clearInterval(ageLoopInterval)
+  localStorage.removeItem('dragonPetSave')
+  console.log('Game reset. Reloading...')
+  // Force reload from server to avoid cache issues
+  location.reload(true)
+}
+
+function toggleResetModal() {
+  resetModal.classList.toggle('hidden')
 }
 
 // Preloading System
@@ -1075,6 +1083,16 @@ btnCloseInfo.addEventListener('click', toggleInfoModal)
 infoModal.addEventListener('click', (e) => {
   if (e.target === infoModal) {
     toggleInfoModal()
+  }
+})
+
+// Reset Modal Listeners
+btnCloseReset.addEventListener('click', toggleResetModal)
+btnCancelReset.addEventListener('click', toggleResetModal)
+btnConfirmReset.addEventListener('click', confirmReset)
+resetModal.addEventListener('click', (e) => {
+  if (e.target === resetModal) {
+    toggleResetModal()
   }
 })
 

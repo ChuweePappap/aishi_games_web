@@ -115,6 +115,50 @@
           </div>
         </div>
       </div>
+
+      <!-- Reset Confirmation Modal -->
+      <div id="reset-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 style="color: #ff6b6b">Reset Game?</h3>
+            <button id="close-reset" class="close-btn">&times;</button>
+          </div>
+          <div class="guide-section" style="text-align: center">
+            <p>
+              Are you sure you want to reset your dragon? This cannot be undone.
+            </p>
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                margin-top: 20px;
+              "
+            >
+              <button
+                id="btn-cancel-reset"
+                class="action-btn"
+                style="border-color: #eee; width: 100px"
+              >
+                Cancel
+              </button>
+              <button
+                id="btn-confirm-reset"
+                class="action-btn"
+                style="
+                  border-color: #ff6b6b;
+                  color: #ff6b6b;
+                  width: 100px;
+                  font-weight: 900;
+                "
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="dragon-stage">
         <div class="dragon-container">
           <img
@@ -129,11 +173,11 @@
           ></video>
           <div id="dragon-sprite" class="dragon-sprite hidden"></div>
           <div id="status-emoji" class="status-emoji"></div>
-          <button id="btn-evolve" class="evolve-btn hidden">
-            ✨ Evolve! ✨
-          </button>
         </div>
       </div>
+      <button id="btn-evolve" class="evolve-btn hidden">
+        ✨ Evolve! ✨
+      </button>
 
       <div class="stats-container">
         <div class="stat-box">
