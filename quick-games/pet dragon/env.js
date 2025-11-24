@@ -3,5 +3,5 @@
 // Set DEV to false for normal game speed
 
 window.ENV = {
-  DEV: true,
+  DEV: false,
 }
