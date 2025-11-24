@@ -367,8 +367,23 @@ h1 {
   border-radius: 15px;
   width: 90%;
   max-width: 320px;
+  max-height: 90%;
+  overflow-y: auto;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   animation: popIn 0.3s ease;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
 }
 
 @keyframes popIn {
