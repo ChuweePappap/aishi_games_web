@@ -38,21 +38,44 @@ const config = {
       },
       nextStageAt: 540,
     }, // +8 hours (9h total)
-    toddler: {
-      img: 'dragon centered/03_v1_toddler.png',
+    child: {
+      img: 'dragon centered/04_v1_child.png',
       animations: {
-        idle: { folder: 'dragon centered/toddler/toddler idle', frames: 6 },
-        play: { folder: 'dragon centered/toddler/toddler play', frames: 6 },
-        eat: { folder: 'dragon centered/toddler/toddler  eat', frames: 6 },
-        sleep: { folder: 'dragon centered/toddler/toddler sleep', frames: 6 },
+        idle: { folder: 'dragon centered/child/child idle', frames: 6 },
+        play: { folder: 'dragon centered/child/child play', frames: 6 },
+        eat: { folder: 'dragon centered/child/child eat', frames: 6 },
+        sleep: { folder: 'dragon centered/child/child sleep', frames: 6 },
       },
-      nextStageAt: 1500,
-    }, // +16 hours (25h total)
-    child: { img: 'dragon centered/04_v1_child.png', nextStageAt: 2940 }, // +24 hours (49h total)
-    teen: { img: 'dragon centered/05_v1_teen.png', nextStageAt: 5820 }, // +48 hours (97h total)
-    adult: { img: 'dragon centered/06a_v1_good_adult.png', nextStageAt: 10140 }, // +72 hours (169h total)
+      nextStageAt: 2940,
+    }, // +24 hours (49h total)
+    teen: {
+      img: 'dragon centered/05_v1_teen.png',
+      animations: {
+        idle: { folder: 'dragon centered/teen/teen idle', frames: 6 },
+        play: { folder: 'dragon centered/teen/teen play', frames: 6 },
+        eat: { folder: 'dragon centered/teen/teen eat', frames: 6 },
+        sleep: { folder: 'dragon centered/teen/teen sleep', frames: 6 },
+      },
+      nextStageAt: 5820,
+    }, // +48 hours (97h total)
+    adult: {
+      img: 'dragon centered/06a_v1_good_adult.png',
+      animations: {
+        idle: { folder: 'dragon centered/adult/adult good idle', frames: 6 },
+        play: { folder: 'dragon centered/adult/adult good play', frames: 6 },
+        eat: { folder: 'dragon centered/adult/adult good eat', frames: 6 },
+        sleep: { folder: 'dragon centered/adult/adult good sleep', frames: 6 },
+      },
+      nextStageAt: 10140,
+    }, // +72 hours (169h total)
     adult_grumpy: {
       img: 'dragon centered/06b_v1_grumpy_adult.png',
+      animations: {
+        idle: { folder: 'dragon centered/adult-bad/adult bad idle', frames: 6 },
+        play: { folder: 'dragon centered/adult-bad/adult bad play', frames: 6 },
+        eat: { folder: 'dragon centered/adult-bad/adult bad eat', frames: 6 },
+        sleep: { folder: 'dragon centered/adult-bad/adult bad sleep', frames: 6 },
+      },
       nextStageAt: 10140,
     }, // Variant
     elder: { img: 'dragon centered/07a_v1_good_elder.png', nextStageAt: 14460 }, // +72 hours (241h total) - Max 3 days per stage
@@ -71,13 +94,12 @@ if (typeof window.ENV !== 'undefined' && window.ENV.DEV) {
   const stageOrder = {
     egg: 1,
     baby: 2,
-    toddler: 3,
-    child: 4,
-    teen: 5,
-    adult: 6,
-    adult_grumpy: 6,
-    elder: 7,
-    elder_grumpy: 7,
+    child: 3,
+    teen: 4,
+    adult: 5,
+    adult_grumpy: 5,
+    elder: 6,
+    elder_grumpy: 6,
   }
 
   for (const [stage, order] of Object.entries(stageOrder)) {
@@ -478,8 +500,7 @@ function checkEvolution() {
       // Linear progression for others
       const linearMap = {
         egg: 'baby',
-        baby: 'toddler',
-        toddler: 'child',
+        baby: 'child',
         child: 'teen',
       }
 
