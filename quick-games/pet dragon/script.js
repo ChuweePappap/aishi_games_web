@@ -100,6 +100,7 @@ function init() {
 
   syncStageWithAge() // Fix for old saves with new config
   calculateOfflineProgress()
+  checkEvolution() // Check if we are ready to evolve immediately after loading/offline progress
   populateInfoModal()
   updateUI()
   startGameLoop()
@@ -126,8 +127,10 @@ function syncStageWithAge() {
     }
   }
 
-  if (gameState.stage !== correctStage) {
-    console.log(`Correcting stage from ${gameState.stage} to ${correctStage}`)
+  // Only correct if the current stage is invalid (not in config)
+  // We do NOT want to auto-upgrade (evolve) here, as that should be manual.
+  if (!config.stages[gameState.stage]) {
+    console.log(`Invalid stage ${gameState.stage}, resetting to ${correctStage}`)
     gameState.stage = correctStage
   }
 }
@@ -212,7 +215,14 @@ function calculateOfflineProgress() {
     const minutesPassed = Math.floor(effectiveGrowthTime / config.dayLength)
 
     if (minutesPassed > 0) {
-      gameState.age += minutesPassed
+      const currentStageConfig = config.stages[gameState.stage]
+      // Check if we would pass the evolution point
+      if (currentStageConfig && (gameState.age + minutesPassed) >= currentStageConfig.nextStageAt) {
+          // Cap age at evolution point
+          gameState.age = currentStageConfig.nextStageAt;
+      } else {
+          gameState.age += minutesPassed;
+      }
 
       // Adjust nextAgeUpdate
       // It should be: now + (time remaining for next minute)
@@ -260,10 +270,19 @@ function startGameLoop() {
     // Only age if not starving (hunger > 0)
     if (gameState.hunger > 0) {
       if (now >= gameState.nextAgeUpdate) {
-        gameState.age++
-        gameState.nextAgeUpdate += config.dayLength
-        checkEvolution()
-        updateUI()
+        const currentStageConfig = config.stages[gameState.stage]
+        // Check if we are at the cap (ready to evolve)
+        if (currentStageConfig && gameState.age >= currentStageConfig.nextStageAt) {
+             // Cap reached, do not age further.
+             // Just consume the tick to keep time moving.
+             gameState.nextAgeUpdate += config.dayLength
+             checkEvolution() // Ensure button is shown
+        } else {
+            gameState.age++
+            gameState.nextAgeUpdate += config.dayLength
+            checkEvolution()
+            updateUI()
+        }
       }
     } else {
       // If starving, push the next update time forward so it doesn't get closer
