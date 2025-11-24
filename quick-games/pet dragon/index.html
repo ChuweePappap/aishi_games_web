@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dragon Pet Evolution</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="game-container">
+      <header>
+        <h1>Dragon Pet</h1>
+        <div class="header-info">
+          <div class="age-display">Age: <span id="age">0m</span></div>
+          <div id="evolution-countdown" class="countdown">Next: --:--</div>
+        </div>
+      </header>
+
+      <div class="dragon-stage">
+        <div class="dragon-container">
+          <img
+            id="dragon-img"
+            src="dragon centered/01_v1_egg.png"
+            alt="Dragon"
+          />
+          <div id="status-emoji" class="status-emoji"></div>
+        </div>
+      </div>
+
+      <div class="stats-container">
+        <div class="stat-box">
+          <label>Hunger</label>
+          <div class="progress-bar">
+            <div id="hunger-bar" class="fill" style="width: 100%"></div>
+          </div>
+        </div>
+        <div class="stat-box">
+          <label>Happiness</label>
+          <div class="progress-bar">
+            <div id="happiness-bar" class="fill" style="width: 100%"></div>
+          </div>
+        </div>
+        <div class="stat-box">
+          <label>Energy</label>
+          <div class="progress-bar">
+            <div id="energy-bar" class="fill" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-feed" class="action-btn">
+          <span class="icon">🍖</span> Feed
+        </button>
+        <button id="btn-play" class="action-btn">
+          <span class="icon">🎾</span> Play
+        </button>
+        <button id="btn-sleep" class="action-btn">
+          <span class="icon">💤</span> Sleep
+        </button>
+      </div>
+
+      <div class="reset-container">
+        <button id="btn-reset" class="secondary-btn">Reset Game</button>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
