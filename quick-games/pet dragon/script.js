@@ -23,8 +23,8 @@ const config = {
   decayRate: 5000, // 5 seconds
   decayAmount: {
     hunger: 0.0174, // Lasts ~8 hours (100 / 0.0174 * 5s = 28736s ≈ 8h)
-    happiness: 0, // Disabled - does not decay
-    energy: 0, // Disabled - does not decay
+    happiness: 0.005787, // Lasts 24 hours (100 / 0.005787 * 5s ≈ 24h)
+    energy: 0.005787, // Lasts 24 hours
   },
   dayLength: 60000, // ms for a game day (1 minute = 1 day for fast progression demo)
   stages: {
