@@ -128,7 +128,7 @@ function init() {
   cameraY = 0
   targetCameraY = 0
 
-  // Create base block
+  // Create base block at bottom of screen
   const baseBlock = {
     x: canvas.width / 2 - INITIAL_BLOCK_WIDTH / 2,
     y: canvas.height - 100,
@@ -243,9 +243,6 @@ function stackBlock() {
     gameOver()
     return
   }
-
-  // Move camera up
-  targetCameraY += BLOCK_HEIGHT
 
   // Increase speed
   speed = Math.min(MAX_SPEED, INITIAL_SPEED + score * SPEED_INCREMENT)
