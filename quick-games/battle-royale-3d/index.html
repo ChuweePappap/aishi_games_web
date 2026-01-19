@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Royale 3D - Last One Standing</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Menu Screen -->
+        <div id="menu-screen">
+            <div class="menu-content">
+                <h1>🎮 BATTLE ROYALE 3D 🎮</h1>
+                <h2>Last One Standing</h2>
+                <div class="menu-info">
+                    <p>🎮 WASD to move</p>
+                    <p>🖱️ Mouse to look around</p>
+                    <p>🔫 Left Click to shoot</p>
+                    <p>🔄 R to reload</p>
+                    <p>🏃 Shift to sprint</p>
+                    <p>🦘 Space to jump</p>
+                    <p>⚠️ Stay inside the safe zone!</p>
+                </div>
+                <button id="start-btn">DROP IN!</button>
+                <div class="players-info">
+                    <span>👥 20 Players</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="hidden">
+            <div class="loading-content">
+                <h2>Loading...</h2>
+                <div class="loading-bar">
+                    <div id="loading-fill"></div>
+                </div>
+                <p id="loading-text">Preparing the battlefield...</p>
+            </div>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div id="crosshair">+</div>
+            
+            <div id="health-container">
+                <div id="health-bar">
+                    <div id="health-fill"></div>
+                </div>
+                <span id="health-text">100</span>
+            </div>
+            
+            <div id="shield-container">
+                <div id="shield-bar">
+                    <div id="shield-fill"></div>
+                </div>
+                <span id="shield-text">0</span>
+            </div>
+            
+            <div id="weapon-info">
+                <span id="weapon-name">Rifle</span>
+                <span id="ammo-count">30 / 90</span>
+            </div>
+            
+            <div id="players-left">
+                <span>👥 Alive: </span><span id="alive-count">20</span>
+            </div>
+            
+            <div id="kill-count">
+                <span>💀 Kills: </span><span id="kills">0</span>
+            </div>
+            
+            <div id="minimap">
+                <canvas id="minimap-canvas"></canvas>
+            </div>
+            
+            <div id="zone-warning" class="hidden">⚠️ GET TO THE SAFE ZONE! ⚠️</div>
+        </div>
+
+        <!-- Kill Feed -->
+        <div id="kill-feed"></div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="hidden">
+            <h1 id="result-title">GAME OVER</h1>
+            <div id="stats">
+                <p>Position: #<span id="final-position">1</span></p>
+                <p>Kills: <span id="final-kills">0</span></p>
+                <p>Damage Dealt: <span id="final-damage">0</span></p>
+                <p>Survival Time: <span id="survival-time">0:00</span></p>
+            </div>
+            <button id="restart-btn">PLAY AGAIN</button>
+            <button id="menu-btn">MAIN MENU</button>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

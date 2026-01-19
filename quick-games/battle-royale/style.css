@@ -1,0 +1,318 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #1a1a2e;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#game-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+#game-canvas {
+  display: block;
+  background: #2d5a27;
+}
+
+/* Menu Screen */
+#menu-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+#menu-screen h1 {
+  font-size: 4rem;
+  color: #e94560;
+  text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+  margin-bottom: 10px;
+  animation: pulse 2s infinite;
+}
+
+#menu-screen h2 {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 40px;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.menu-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px 40px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+.menu-info p {
+  color: #fff;
+  font-size: 1.1rem;
+  margin: 10px 0;
+}
+
+#start-btn,
+#restart-btn {
+  padding: 15px 60px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(45deg, #e94560, #ff6b6b);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#start-btn:hover,
+#restart-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 30px rgba(233, 69, 96, 0.6);
+}
+
+.players-alive {
+  margin-top: 30px;
+  color: #fff;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+/* HUD */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+#hud.hidden {
+  display: none;
+}
+
+#health-bar,
+#shield-bar {
+  width: 200px;
+  height: 25px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 5px;
+}
+
+#health-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff4444, #ff6b6b);
+  transition: width 0.3s ease;
+}
+
+#shield-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #4488ff, #6bb3ff);
+  transition: width 0.3s ease;
+}
+
+#health-text,
+#shield-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+#weapon-info {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px 20px;
+  border-radius: 5px;
+  color: #fff;
+  margin-top: 10px;
+}
+
+#weapon-name {
+  color: #ffd700;
+  font-weight: bold;
+  margin-right: 15px;
+}
+
+#players-left,
+#kill-count {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px 20px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+#alive-count {
+  color: #4ade80;
+  font-weight: bold;
+}
+
+#kills {
+  color: #e94560;
+  font-weight: bold;
+}
+
+#zone-warning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 0, 0.8);
+  color: #fff;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  animation: blink 0.5s infinite;
+}
+
+#zone-warning.hidden {
+  display: none;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Kill Feed */
+#kill-feed {
+  position: absolute;
+  top: 80px;
+  right: 15px;
+  width: 250px;
+}
+
+.kill-message {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  animation: slideIn 0.3s ease;
+}
+
+.kill-message .killer {
+  color: #4ade80;
+}
+
+.kill-message .victim {
+  color: #f87171;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Game Over Screen */
+#game-over {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+#game-over.hidden {
+  display: none;
+}
+
+#result-title {
+  font-size: 4rem;
+  margin-bottom: 30px;
+}
+
+#result-title.victory {
+  color: #ffd700;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
+
+#result-title.defeat {
+  color: #e94560;
+  text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+}
+
+#stats {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px 50px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+#stats p {
+  color: #fff;
+  font-size: 1.3rem;
+  margin: 10px 0;
+}
+
+#stats span {
+  color: #4ade80;
+  font-weight: bold;
+}
+
+/* Minimap */
+#minimap {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  width: 150px;
+  height: 150px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
