@@ -582,17 +582,29 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 document.getElementById('share-btn').addEventListener('click', () => {
   const gameUrl =
     'https://world.org/mini-app?app_id=app_743401e3bbed2f8045c0963167d39619&path=&draft_id=meta_3b86a1d4b0a5d93e75cff5beee992ae7'
-  const text = `🗼 I scored ${score} in Stack Tower! Can you beat me? 🎮\n\n#AIShigames #AIShiCoin\n\n${gameUrl}`
+  
+  const shareText = `🗼 I scored ${score} in Stack Tower!
+
+Can you beat me? 🎮
+
+Play now: ${gameUrl}
+
+#AIShigames #AIShiCoin`
 
   if (navigator.share) {
     navigator.share({
       title: 'Stack Tower - AIshi Games',
-      text: `🗼 I scored ${score} in Stack Tower! Can you beat me? 🎮 #AIShigames #AIShiCoin`,
+      text: `🗼 I scored ${score} in Stack Tower!\n\nCan you beat me? 🎮\n\n#AIShigames #AIShiCoin`,
       url: gameUrl,
     })
   } else {
     // Fallback: Open Twitter/X share
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🗼 I scored ${score} in Stack Tower! Can you beat me? 🎮 #AIShigames #AIShiCoin`)}&url=${encodeURIComponent(gameUrl)}`
+    const tweetText = `🗼 I scored ${score} in Stack Tower!
+
+Can you beat me? 🎮
+
+#AIShigames #AIShiCoin`
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(gameUrl)}`
     window.open(twitterUrl, '_blank')
   }
 })
