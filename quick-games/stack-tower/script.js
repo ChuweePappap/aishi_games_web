@@ -581,7 +581,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 
 document.getElementById('share-btn').addEventListener('click', () => {
   const gameUrl =
-    'https://world.org/mini-app?app_id=app_743401e3bbed2f8045c0963167d39619&path=&draft_id=meta_3b86a1d4b0a5d93e75cff5beee992ae7'
+    'https://world.org/mini-app?app_id=app_743401e3bbed2f8045c0963167d39619&path='
 
   const shareText = `🗼 I scored ${score} in Stack Tower!
 
